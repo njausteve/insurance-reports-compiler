@@ -1,0 +1,20 @@
+{
+  "name": "insurance-report-compiler",
+  "version": "1.0.0",
+  "description": "Insurance reports compiler",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Insurance",
+    "javascript"
+  ],
+  "author": "@njausteve",
+  "license": "ISC",
+  "dependencies": {
+    "lodash": "^4.17.10",
+    "object-rename-keys": "^1.2.1",
+    "xlsx": "^0.12.13"
+  }
+}

@@ -1,0 +1,11 @@
+#node modules
+
+node_modules/
+
+#any sensitive excel data
+*.xls
+
+*.xlsx
+
+#lock file
+package-lock.json

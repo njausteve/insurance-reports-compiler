@@ -1,56 +1,117 @@
+let XLSX = require("xlsx");
+let workbook = XLSX.readFile("./insurance.xlsx");
+let sheetNameList = workbook.SheetNames;
+let _ = require("lodash");
+let objectRenameKeys = require("object-rename-keys");
 
-var XLSX = require('xlsx');
-var workbook = XLSX.readFile('./os as at 31032018.xlsx');
-var sheet_name_list = workbook.SheetNames;
-var fs = require('fs');
-var objectRenameKeys = require('object-rename-keys');
+//console.log(XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[0]]))
+let sheet1 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[0]]);
+let sheet2 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[1]]);
+let sheet3 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[2]]);
 
-//console.log(XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]))
-let combineOS =[];
-let insuranceItem = {};
-var sheet1 = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]);
-var sheet2 = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[1]]);
-var sheet3 = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[2]]);
-
-osBeginKeyChangesMap = {
-       'CLASS' : 'insuranceClass',
-       'POLICY NO':'policyNo',
-       'CLAIM NO': 'claimNo',
-       'INSURED NAME':'insuredName' ,
-       'DATE REPORTED': 'dateReported',
-       'D.O.L': 'dateOfLoss'  ,
-       'DATE OF LOSS': 'dateOfLoss',
-       'PERIOD FROM':'periodFrom',
-       'PERIOD TO': 'periodTo',
-       'ESTIMATE': 'osBeginEstimate',
-       ' O/S ESTIMATE ':'osBeginEstimate',
-       'MANDATORY CLAIM': 'osBeginMandatoryClaim',
-       'COMPANY CLAIM':'osBeginCompanyClaim',        
+let osBeginKeyChangesMap = {
+    CLASS: "insuranceClass",
+    "POLICY NO": "policyNo",
+    "CLAIM NO": "claimNo",
+    "INSURED NAME": "insuredName",
+    "DATE REPORTED": "dateReported",
+    "D.O.L": "dateOfLoss",
+    "DATE OF LOSS": "dateOfLoss",
+    "PERIOD FROM": "periodFrom",
+    "PERIOD TO": "periodTo",
+    ESTIMATE: "osBeginEstimate"
 };
 
-osEndMonthKeyChangesMap = {
-  'CLASS' : 'insuranceClass',
-  'POLICY NO':'policyNo',
-  'CLAIM NO': 'claimNo',
-  'INSURED NAME':'insuredName' ,
-  'DATE REPORTED': 'dateReported',
-  'D.O.L': 'dateOfLoss'  ,
-  'DATE OF LOSS': 'dateOfLoss',
-  'PERIOD FROM':'periodFrom',
-  'PERIOD TO': 'periodTo',
-  'ESTIMATE': 'osEndMonthEstimate',
-  ' O/S ESTIMATE ':'osEndMonthEstimate',
-  'MANDATORY CLAIM': 'osEndMonthMandatoryClaim',
-  'COMPANY CLAIM':'osEndMonthCompanyClaim',        
+let osEndMonthKeyChangesMap = {
+    CLASS: "insuranceClass",
+    "POLICY NO": "policyNo",
+    "CLAIM NO": "claimNo",
+    "INSURED NAME": "insuredName",
+    "DATE REPORTED": "dateReported",
+    "D.O.L": "dateOfLoss",
+    "DATE OF LOSS": "dateOfLoss",
+    "PERIOD FROM": "periodFrom",
+    "PERIOD TO": "periodTo",
+    ESTIMATE: "osEndMonthEstimate"
 };
 
-var osBeginMonth = objectRenameKeys(sheet1, osBeginKeyChangesMap);
-var osEndMonth = objectRenameKeys(sheet2, osEndMonthKeyChangesMap);
-//var intimated = objectRenameKeys(sheet3, osKeyChangesMap);
+let osBeginMonth = objectRenameKeys(sheet1, osBeginKeyChangesMap);
+let osEndMonth = objectRenameKeys(sheet2, osEndMonthKeyChangesMap);
+// //let intimated = objectRenameKeys(sheet3, osKeyChangesMap);
 
+let combinedOsWithDuplicates = _.concat(osEndMonth, osBeginMonth, "claimNo");
 
-console.log(osEndMonth);
+// [Removed OS] : to find those in the osEndMonth but not in the osBeginMonth
+let addedOsEndFromBeginMonth = _.differenceBy(
+    osEndMonth,
+    osBeginMonth,
+    "claimNo"
+);
 
+// [Added OS]: to find those in the osBeginMonth but not in the osEndMonth
+let removedOsBeginToEndMonth = _.differenceBy(
+    osBeginMonth,
+    osEndMonth,
+    "claimNo"
+);
 
+let osNoChange = _.intersectionBy(osBeginMonth, osEndMonth, "claimNo");
 
+// console.log( "unionby ---> : " + combinedOs.length + "\n concat -----> :", combined.length + "\n added ----> : " + addedOsEndFromBeginMonth.length + "\n removed ---> : " + removedOsBeginToEndMonth.length + "\n no change---> : " + osNoChange.length );
 
+let osRepeatedClaimNo = osNoChange.map(function (claim) {
+    let newObj = {};
+    combinedOsWithDuplicates.map(function (combineClaim) {
+        if (combineClaim.claimNo === claim.claimNo) {
+            for (const prop in combineClaim) {
+
+                if (combineClaim[prop] === undefined){
+                    newObj[prop] = 0;
+                }
+                
+                newObj[prop] = combineClaim[prop];
+            }
+        }
+    });
+
+    return newObj;
+});
+
+let noEmpty = function (obj) {
+    var newObj = {};
+
+    for (const prop in obj) {
+        newObj[prop] = obj[prop];
+    }
+
+    return newObj;
+};
+
+let combinedOsWithoutDuplicates = _.concat(
+    addedOsEndFromBeginMonth,
+    removedOsBeginToEndMonth,
+    osRepeatedClaimNo,
+    "claimNO"
+).map(noEmpty);
+
+console.log(combinedOsWithoutDuplicates);
+
+// create work book
+let wb = XLSX.utils.book_new();
+
+// create sheetsNames
+wb.SheetNames.push("Combined OS");
+wb.SheetNames.push("Removed OS");
+wb.SheetNames.push("Added OS");
+
+let wsRemovedOs = XLSX.utils.json_to_sheet(removedOsBeginToEndMonth);
+let wsAddedOs = XLSX.utils.json_to_sheet(addedOsEndFromBeginMonth);
+let wsCombinedOs = XLSX.utils.json_to_sheet(combinedOsWithoutDuplicates);
+
+wb.Sheets["Combined OS"] = wsCombinedOs;
+wb.Sheets["Added OS"] = wsAddedOs;
+wb.Sheets["Removed OS"] = wsRemovedOs;
+
+XLSX.write(wb, { bookType: "xlsx", type: "binary" });
+
+XLSX.writeFile(wb, "Final Report.xlsx");

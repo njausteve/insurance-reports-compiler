@@ -1,5 +1,6 @@
-#node modules
+.DS_Store
 
+#node modules
 node_modules/
 
 #any sensitive excel data
@@ -9,3 +10,11 @@ node_modules/
 
 #lock file
 package-lock.json
+
+
+#test
+test.js
+
+#eslintrc
+
+.eslintrc.json

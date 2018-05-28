@@ -87,6 +87,42 @@ let osRepeatedClaimNo = osNoChange.map(function (claim) {
 });
 
 
+
+// convert "200,000.75" to 200000.75
+
+function toFloat(stringValue){
+
+    return parseFloat(stringValue.replace(/,/g, ""));
+}
+
+
+
+
+
+let movementUp = osRepeatedClaimNo.filter( function(claim){
+    if(toFloat(claim.osBeginEstimate) < toFloat(claim.osEndMonthEstimate)){
+        return claim;
+    } 
+});
+
+let movementDown = osRepeatedClaimNo.filter( function(claim){
+    if(toFloat(claim.osBeginEstimate) > toFloat(claim.osEndMonthEstimate)){
+        return claim;
+    } 
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
 // combined sheet OS begining and end no dubplictes:
 
 let combinedSheets12 = _.concat(
@@ -112,13 +148,7 @@ let combinedSheets12 = _.concat(
     return newObj;
 });
 
-
-
-
 // combined  (OS end & OS begining) and intimated
-
-
-
 
 
 
@@ -136,21 +166,24 @@ let revivedClaims = _.differenceBy(addedOsEndFromBeginMonth, intimated, "claimNo
 let wb = XLSX.utils.book_new();
 
 // create sheetsNames
-wb.SheetNames.push("Combined OS");
-wb.SheetNames.push("Removed OS");
-wb.SheetNames.push("Added OS");
-wb.SheetNames.push("Revived claims");
+wb.SheetNames.push("Combined OS", "Removed OS", "Added OS", "Revived claims", "in OSBegining & OSend", "upMovement", "downMovent" );
+
 
 let wsRemovedOs = XLSX.utils.json_to_sheet(removedOsBeginToEndMonth);
 let wsAddedOs = XLSX.utils.json_to_sheet(addedOsEndFromBeginMonth);
-let wsCombinedOs = XLSX.utils.json_to_sheet(combinedSheets12);
+let wsCombinedOs = XLSX.utils.json_to_sheet();
 let wsRevivedOs = XLSX.utils.json_to_sheet(revivedClaims);
+let wsInBeginingEnd = XLSX.utils.json_to_sheet(osRepeatedClaimNo);
+let wsUpMovement = XLSX.utils.json_to_sheet(movementUp);
 
 
 wb.Sheets["Combined OS"] = wsCombinedOs;
 wb.Sheets["Added OS"] = wsAddedOs;
+wb.Sheets["in OSBegining & OSend"] = wsInBeginingEnd;
 wb.Sheets["Removed OS"] = wsRemovedOs;
+
 wb.Sheets["Revived claims"] = wsRevivedOs;
+
 
 XLSX.write(wb, { bookType: "xlsx", type: "binary" });
 

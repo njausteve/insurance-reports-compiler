@@ -97,29 +97,37 @@ function toFloat(stringValue){
 
 
 
+function calcMovement(claim){
+     claim.difference = toFloat(claim.osEndMonthEstimate) - toFloat(claim.osBeginEstimate);
+
+     return claim;
+}   
+
+
+
+function movementTotal(movementArray) {
+    return movementArray.reduce(function (prev, cur) {
+        return prev + cur.difference;
+    }, 0);
+}
+
+
+
 
 
 let movementUp = osRepeatedClaimNo.filter( function(claim){
     if(toFloat(claim.osBeginEstimate) < toFloat(claim.osEndMonthEstimate)){
         return claim;
     } 
-});
+}).map(calcMovement);
+
+
 
 let movementDown = osRepeatedClaimNo.filter( function(claim){
     if(toFloat(claim.osBeginEstimate) > toFloat(claim.osEndMonthEstimate)){
         return claim;
     } 
-});
-
-
-
-
-
-
-
-
-
-
+}).map(calcMovement);
 
 
 
@@ -148,12 +156,6 @@ let combinedSheets12 = _.concat(
     return newObj;
 });
 
-// combined  (OS end & OS begining) and intimated
-
-
-
-
-
 
 // find values that are revived : present in Added but not intimated for this month
 
@@ -166,22 +168,24 @@ let revivedClaims = _.differenceBy(addedOsEndFromBeginMonth, intimated, "claimNo
 let wb = XLSX.utils.book_new();
 
 // create sheetsNames
-wb.SheetNames.push("Combined OS", "Removed OS", "Added OS", "Revived claims", "in OSBegining & OSend", "upMovement", "downMovent" );
+wb.SheetNames.push("Combined OS", "Removed OS", "Added OS", "Revived claims", "in OSBegining & OSend", "Movement up","Movement down");
 
 
 let wsRemovedOs = XLSX.utils.json_to_sheet(removedOsBeginToEndMonth);
 let wsAddedOs = XLSX.utils.json_to_sheet(addedOsEndFromBeginMonth);
-let wsCombinedOs = XLSX.utils.json_to_sheet();
+let wsCombinedOs = XLSX.utils.json_to_sheet(combinedSheets12);
 let wsRevivedOs = XLSX.utils.json_to_sheet(revivedClaims);
 let wsInBeginingEnd = XLSX.utils.json_to_sheet(osRepeatedClaimNo);
 let wsUpMovement = XLSX.utils.json_to_sheet(movementUp);
+let wsDownMovement = XLSX.utils.json_to_sheet(movementDown);
 
 
 wb.Sheets["Combined OS"] = wsCombinedOs;
 wb.Sheets["Added OS"] = wsAddedOs;
-wb.Sheets["in OSBegining & OSend"] = wsInBeginingEnd;
 wb.Sheets["Removed OS"] = wsRemovedOs;
-
+wb.Sheets["in OSBegining & OSend"] = wsInBeginingEnd;
+wb.Sheets["Movement up"] = wsUpMovement;
+wb.Sheets["Movement down"] = wsDownMovement;
 wb.Sheets["Revived claims"] = wsRevivedOs;
 
 

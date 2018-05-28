@@ -36,8 +36,20 @@ let osEndMonthKeyChangesMap = {
     ESTIMATE: "osEndMonthEstimate"
 };
 
+
+let intimatedKeyChangesMap = {
+    CLASS: "insuranceClass",
+    "INSURED" : "insured",
+    "AGENCY" : "Agency",
+    "POLICY NO": "policyNo",
+    "CLAIM NO": "claimNo",
+    "INTIMATION RESERVE": "intimationReserve"
+};
+
+
 let osBeginMonth = objectRenameKeys(sheet1, osBeginKeyChangesMap);
 let osEndMonth = objectRenameKeys(sheet2, osEndMonthKeyChangesMap);
+let intimated = objectRenameKeys(sheet3, intimatedKeyChangesMap);
 // //let intimated = objectRenameKeys(sheet3, osKeyChangesMap);
 
 let combinedOsWithDuplicates = _.concat(osEndMonth, osBeginMonth, "claimNo");
@@ -74,7 +86,10 @@ let osRepeatedClaimNo = osNoChange.map(function (claim) {
     return newObj;
 });
 
-let combinedOsWithoutDuplicates = _.concat(
+
+// combined sheet OS begining and end no dubplictes:
+
+let combinedSheets12 = _.concat(
     addedOsEndFromBeginMonth,
     removedOsBeginToEndMonth,
     osRepeatedClaimNo,
@@ -99,6 +114,24 @@ let combinedOsWithoutDuplicates = _.concat(
 
 
 
+
+// combined  (OS end & OS begining) and intimated
+
+
+
+
+
+
+
+
+
+// find values that are revived : present in Added but not intimated for this month
+
+let revivedClaims = _.differenceBy(addedOsEndFromBeginMonth, intimated, "claimNo");
+
+
+
+
 // create work book
 let wb = XLSX.utils.book_new();
 
@@ -106,22 +139,26 @@ let wb = XLSX.utils.book_new();
 wb.SheetNames.push("Combined OS");
 wb.SheetNames.push("Removed OS");
 wb.SheetNames.push("Added OS");
+wb.SheetNames.push("Revived claims");
 
 let wsRemovedOs = XLSX.utils.json_to_sheet(removedOsBeginToEndMonth);
 let wsAddedOs = XLSX.utils.json_to_sheet(addedOsEndFromBeginMonth);
-let wsCombinedOs = XLSX.utils.json_to_sheet(combinedOsWithoutDuplicates);
+let wsCombinedOs = XLSX.utils.json_to_sheet(combinedSheets12);
+let wsRevivedOs = XLSX.utils.json_to_sheet(revivedClaims);
+
 
 wb.Sheets["Combined OS"] = wsCombinedOs;
 wb.Sheets["Added OS"] = wsAddedOs;
 wb.Sheets["Removed OS"] = wsRemovedOs;
+wb.Sheets["Revived claims"] = wsRevivedOs;
 
 XLSX.write(wb, { bookType: "xlsx", type: "binary" });
+
+
 
 
 del.sync(["*.xlsx"]);
 XLSX.writeFile(wb, "Final Report.xlsx");
 
 
-
-
-
+// console.log(revivedClaims);

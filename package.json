@@ -13,6 +13,7 @@
   "author": "@njausteve",
   "license": "ISC",
   "dependencies": {
+    "del": "^3.0.0",
     "lodash": "^4.17.10",
     "object-rename-keys": "^1.2.1",
     "xlsx": "^0.12.13"

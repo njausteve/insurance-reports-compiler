@@ -1,8 +1,9 @@
-let XLSX = require("xlsx");
-let workbook = XLSX.readFile("./insurance.xlsx");
+const XLSX = require("xlsx");
+let workbook = XLSX.readFile("./source file/insurance.xlsx");
 let sheetNameList = workbook.SheetNames;
-let _ = require("lodash");
-let objectRenameKeys = require("object-rename-keys");
+const _ = require("lodash");
+const del = require("del");
+const objectRenameKeys = require("object-rename-keys");
 
 //console.log(XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[0]]))
 let sheet1 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[0]]);
@@ -61,14 +62,10 @@ let osNoChange = _.intersectionBy(osBeginMonth, osEndMonth, "claimNo");
 
 let osRepeatedClaimNo = osNoChange.map(function (claim) {
     let newObj = {};
+
     combinedOsWithDuplicates.map(function (combineClaim) {
         if (combineClaim.claimNo === claim.claimNo) {
             for (const prop in combineClaim) {
-
-                if (combineClaim[prop] === undefined){
-                    newObj[prop] = 0;
-                }
-                
                 newObj[prop] = combineClaim[prop];
             }
         }
@@ -77,24 +74,30 @@ let osRepeatedClaimNo = osNoChange.map(function (claim) {
     return newObj;
 });
 
-let noEmpty = function (obj) {
-    var newObj = {};
-
-    for (const prop in obj) {
-        newObj[prop] = obj[prop];
-    }
-
-    return newObj;
-};
-
 let combinedOsWithoutDuplicates = _.concat(
     addedOsEndFromBeginMonth,
     removedOsBeginToEndMonth,
     osRepeatedClaimNo,
     "claimNO"
-).map(noEmpty);
+).map(function (claim) {
+    let newObj = {};
 
-console.log(combinedOsWithoutDuplicates);
+    for (const prop in claim) {
+
+        newObj[prop] = claim[prop];
+
+        if (claim.osEndMonthEstimate == null) {
+            newObj.osEndMonthEstimate = 0;
+
+        }else if(claim.osBeginEstimate == null) {
+            newObj.osBeginEstimate = 0;
+        }
+    }
+
+    return newObj;
+});
+
+
 
 // create work book
 let wb = XLSX.utils.book_new();
@@ -114,4 +117,11 @@ wb.Sheets["Removed OS"] = wsRemovedOs;
 
 XLSX.write(wb, { bookType: "xlsx", type: "binary" });
 
+
+del.sync(["*.xlsx"]);
 XLSX.writeFile(wb, "Final Report.xlsx");
+
+
+
+
+

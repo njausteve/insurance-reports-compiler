@@ -121,6 +121,116 @@ let movementDown = osRepeatedClaimNo
   })
   .map(calcMovement);
 
+//   sheet with total up + down
+
+let movementUpDown = _.concat(movementUp, movementDown);
+
+function calculateMovementPerclass(targetArray) {
+  let totalMovement = {};
+
+  let motorPrivate = [];
+  let motorPsvHire = [];
+  let miscellaneous = [];
+  let fireDomestic = [];
+  let marine = [];
+  let fireIndustrial = [];
+  let liabilities = [];
+  let motorCommercial = [];
+  let accident = [];
+  let engineering = [];
+  let theft = [];
+  let wiba = [];
+  let medical = [];
+  let count = {};
+
+  targetArray.map(function(claim) {
+    claimPrefixShort = claim.policyNo.slice(0, 6);
+    claimPrefixLong = claim.policyNo.slice(0, 10);
+
+    if (claimPrefixShort == "MGL/07") {
+      motorPrivate.push(claim.difference);
+      // motor private
+    } else if (claimPrefixLong === "MGL/08/084") {
+      // MOTOR PSV HIRE
+      motorPsvHire.push(claim.difference);
+    } else if (claimPrefixShort === "MGL/12") {
+      // MISCELLANEOUS
+
+      miscellaneous.push(claim.difference);
+    } else if (claimPrefixShort === "MGL/03") {
+      // FIRE DOMESTIC
+
+      fireDomestic.push(claim.difference);
+    } else if (claimPrefixShort === "MGL/06") {
+      // MARINE
+
+      marine.push(claim.difference);
+    } else if (claimPrefixShort === "MGL/04") {
+      fireIndustrial.push(claim.difference);
+      // FIRE INDUSTRIAL
+    } else if (claimPrefixShort === "MGL/05") {
+      liabilities.push(claim.difference);
+      // LIABILITIES
+    } else if (claimPrefixShort === "MGL/08") {
+      // MOTOR COMMERCIAL
+      motorCommercial.push(claim.difference);
+    } else if (claimPrefixShort === "MGL/02") {
+      // ENGINEERING
+      engineering.push(claim.difference);
+    } else if (claimPrefixShort === "MGL/10") {
+      // THEFT
+      theft.push(claim.difference);
+    } else if (claimPrefixShort === "MGL/11") {
+      // WIBA
+      wiba.push(claim.difference);
+    } else if (
+      claimPrefixLong === "MGL/09/096" ||
+      claimPrefixLong === "MGL/09/091" ||
+      claimPrefixLong === "MGL/09/099"
+    ) {
+      // medical
+      medical.push(claim.difference);
+    } else {
+      // ACCIDENT
+      accident.push(claim.difference);
+    }
+  });
+
+  totalMovement.motorPrivate = _.sum(motorPrivate);
+  totalMovement.motorPsvHire = _.sum(motorPsvHire);
+  totalMovement.miscellaneous = _.sum(miscellaneous);
+  totalMovement.fireDomestic = _.sum(fireDomestic);
+  totalMovement.marine = _.sum(marine);
+  totalMovement.fireIndustrial = _.sum(fireIndustrial);
+  totalMovement.liabilities = _.sum(liabilities);
+  totalMovement.motorCommercial = _.sum(motorCommercial);
+  totalMovement.accident = _.sum(accident);
+  totalMovement.engineering = _.sum(engineering);
+  totalMovement.theft = _.sum(theft);
+  totalMovement.wiba = _.sum(wiba);
+  totalMovement.medical = _.sum(medical);
+
+  totalMovement.count = {
+    motorPrivate: motorPrivate.length,
+    motorPsvHire: motorPsvHire.length,
+    miscellaneous: miscellaneous.length,
+    fireDomestic: fireDomestic.length,
+    marine: marine.length,
+    fireIndustrial: fireIndustrial.length,
+    liabilities: liabilities.length,
+    motorCommercial: motorCommercial.length,
+    accident: accident.length,
+    engineering: engineering.length,
+    theft: theft.length,
+    wiba: wiba.length,
+    medical: medical.length
+  };
+
+  console.log(totalMovement);
+
+  return totalMovement;
+}
+
 // total movement summary (up + down)
 let movementSummary = [];
 
@@ -130,198 +240,23 @@ function getMovementSummary() {
   newObj.CLASS = "TOTAL MOVEMENT";
   newObj.COUNT = movementUp.length + movementDown.length;
   newObj.TOTAL = movementTotal(movementUp) + movementTotal(movementDown);
-
   movementSummary.push(newObj);
+
+  let movementObj = calculateMovementPerclass(movementUpDown);
+
+  for (const prop in movementObj) {
+    
+    if(prop != 'count'){
+      movementSummary.push({
+        CLASS: prop,
+        COUNT: movementObj.count[prop],
+        TOTAL: movementObj[prop]
+      });
+    }
+  }
 }
 
 getMovementSummary();
-
-function calculateMovementPerclass(targetArray) {
-  let totalMovement = {};
-  let motorPrivate, motorPsvHire, miscellaneous, fireDomestic, marine, fireIndustrial, liabilities, motorCommercial, engineering, theft, wiba, medical = [];
-
-  targetArray.map(function(claim) {
-    claimPrefixShort = claim.policyNo.slice(0, 6);
-    claimPrefixLong = claim.policyNo.slice(0, 10);
-
-    if (claimPrefixShort == "MGL/07") {
-      
-      motorPrivate.push(claim.difference);
-      // motor private
-    } else if (claimPrefixLong === "MGL/08/084") {
-      // MOTOR PSV HIRE 
-      motorPsvHire.push(claim.difference);
-
-    } else if (claimPrefixShort === "MGL/12") {
-      // MISCELLANEOUS
- 
-      miscellaneous.push(claim.difference);
-
-    } else if (claimPrefixShort === "MGL/03") {
-      // FIRE DOMESTIC
-
-      fireDomestic.push(claim.difference);
-
-    } else if (claimPrefixShort === "MGL/06") {
-      // MARINE
-
-        marine.push(claim.difference);
-
-    } else if (claimPrefixShort === "MGL/04") {
-
-      fireIndustrial.push(claim.difference);
-      // FIRE INDUSTRIAL
-    } else if (claimPrefixShort === "MGL/05") {
-
-      liabilities.push(claim.difference);
-      // LIABILITIES
-    } else if (claimPrefixShort === "MGL/08") {
-      // MOTOR COMMERCIAL
-      motorCommercial.push(claim.difference);
-
-    } else if (claimPrefixShort === "MGL/02") {
-      // ENGINEERING
-      engineering.push(claim.difference);
-
-    } else if (claimPrefixShort === "MGL/10") {
-      // THEFT
-      theft.push(claim.difference);
-
-    } else if (claimPrefixShort === "MGL/11") {
-      // WIBA
-      wiba.push(claim.difference);
-
-    } else if (
-      claimPrefixLong === "MGL/09/096" ||
-      claimPrefixLong === "MGL/09/091" ||
-      claimPrefixLong === "MGL/09/099"
-    ) {
-      // medical
-      medical.push(claim.difference);
-
-    } else {
-      // ACCIDENT
-      accident.push(claim.difference);
-    }
-  });
-
-  console.log(totalMovement);
-}
-
-calculateMovementPerclass(movementUp);
-
-let classSubclassData = [
-  {
-    class: "accident",
-    subclass: [
-      "GROUP PERSONAL ACCIDENT",
-      "INBOUND TRAVEL INSURANCE POLICY",
-      "INDIVIDUAL PERSONAL ACCIDENT",
-      "OVERSEAS TRAVEL INSURANCE COVER"
-    ],
-    policyNo: ["MGL/09/092", "MGL/09/095", "MGL/09/090", "MGL/09/097"]
-  },
-
-  {
-    class: "ENGINEERING",
-    subclass: [
-      "CONTRACTORS ALL RISK",
-      "ELECTRONIC EQUIPMENT",
-      "ERECTION ALL RISK",
-      "L.O.P. FOLLOWING MACHINERY B/DOWN",
-      "MACHINERY BREAKDOWN"
-    ],
-    policyNo: ["MGL/02"]
-  },
-  {
-    class: "MOTOR PRIVATE",
-    subclass: ["MOTOR CYCLE", "MOTOR PRIVATE", "MOTOR PRIVATE ENHANCED"],
-    policyNo: ["MGL/07"]
-  },
-  {
-    class: "MOTOR COMMERCIAL",
-    subclass: [
-      "MOTOR COMMERCIAL",
-      "MOTOR GENERAL CARTAGE",
-      "MOTOR TRACTORS",
-      "MOTOR TRADE"
-    ],
-    policyNo: ["MGL/08"]
-  },
-  {
-    class: "MOTOR PSV HIRE",
-    subclass: ["MOTOR(PSV) PRIVATE HIRE"],
-    policyNo: ["MGL/08/084"]
-  },
-  {
-    class: "MISCELLANEOUS",
-    subclass: [
-      "BONDS ( I A TA) FINANCIAL GUARA",
-      "GOLFERS/SPORTSMAN INSURANCE"
-    ],
-    policyNo: ["MGL/12"]
-  },
-  {
-    class: "LIABILITIES",
-    subclass: [
-      "CARRIERS LIABILITY POLICY",
-      "CONTRACTUAL LIABILITY POLICY",
-      "PORT LIABILITY POLICY",
-      "PUBLIC LIABILITY",
-      "WAREHOUSE LIABILITY POLICY"
-    ],
-    policyNo: ["MGL/05"]
-  },
-  {
-    class: "FIRE DOMESTIC",
-    subclass: ["FIRE DOMESTIC(HOC)"],
-    policyNo: ["MGL/03"]
-  },
-  {
-    class: "MARINE",
-    subclass: [
-      "GOODS IN TRANSIT",
-      "MARINE CARGO",
-      "MARINE HULL",
-      "MARINE OPEN COVER"
-    ],
-    policyNo: ["MGL/06"]
-  },
-  {
-    class: "FIRE INDUSTRIAL",
-    subclass: ["FIRE INDUSTRIAL", "INDUSTRIAL ALL RISKS"],
-    policyNo: ["MGL/04"]
-  },
-  {
-    class: "MEDICAL",
-    subclass: [
-      "ACCIDENT HOSPITALISATION INS.P",
-      "HEALTH/MEDICAL EXPENSES INSURANCE",
-      "INDIVIDUAL MEDICAL INSURANCE"
-    ],
-    policyNo: ["MGL/09/096", "MGL/09/099", "MGL/09/091"]
-  },
-  {
-    class: "WIBA",
-    subclass: [
-      "WORKERS INJURUY BENEFIT ACT",
-      "WORKMEN'S COMP (COMMON LAW) COVER",
-      "WORKMEN'S COMPENSATION(ACT) CO"
-    ],
-    policyNo: ["MGL/11"]
-  },
-  {
-    class: "THEFT",
-    subclass: [
-      "ALL RISKS",
-      "BANKERS BLANKET INSURANCE",
-      "BUGRLARY",
-      "CASH IN TRANSIT",
-      "FIDELITY GUARANTEE"
-    ],
-    policyNo: ["MGL/10"]
-  }
-];
 
 /*  Insurance Classes 
 

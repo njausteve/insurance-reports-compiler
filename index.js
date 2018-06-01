@@ -85,6 +85,15 @@ let osRepeatedClaimNo = osNoChange.map(function(claim) {
   return newObj;
 });
 
+// cover camelCase to normalCASE Uppercase
+
+function unCamelCase(str){
+    str = str.replace(/([a-z\xE0-\xFF])([A-Z\xC0\xDF])/g, '$1 $2');
+    str = str.toLowerCase(); //add space between camelCase text
+    return str.toUpperCase();
+  }
+  
+
 // convert "200,000.75" to 200000.75
 
 function toFloat(stringValue) {
@@ -248,7 +257,7 @@ function getMovementSummary() {
     
     if(prop != 'count'){
       movementSummary.push({
-        CLASS: prop,
+        CLASS: unCamelCase(prop),
         COUNT: movementObj.count[prop],
         TOTAL: movementObj[prop]
       });

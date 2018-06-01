@@ -66,7 +66,6 @@ let intimated = objectRenameKeys(sheet3, intimatedKeyChangesMap);
 let payment = objectRenameKeys(sheet4, paymentKeyChangesMap);
 // //let intimated = objectRenameKeys(sheet3, osKeyChangesMap);
 
-console.log(payment);
 
 let combinedOsWithDuplicates = _.concat(osEndMonth, osBeginMonth, "claimNo");
 
@@ -342,10 +341,7 @@ let revivedClaims = _.differenceBy(
 );
 
 
-
 let closedAsNoClaim = _.differenceBy(removedOsBeginToEndMonth, payment, "claimNo");
-
-console.log( "removed ---> : " + removedOsBeginToEndMonth.length + "\n  paid---> : " + payment.length );
 
 
 // create work book
@@ -357,6 +353,7 @@ wb.SheetNames.push(
   "Removed OS",
   "Added OS",
   "Revived claims",
+  "closed as no claim",
   "in OSBegining & OSend",
   "Movement up",
   "Movement down",
@@ -367,6 +364,7 @@ let wsRemovedOs = XLSX.utils.json_to_sheet(removedOsBeginToEndMonth);
 let wsAddedOs = XLSX.utils.json_to_sheet(addedOsEndFromBeginMonth);
 let wsCombinedOs = XLSX.utils.json_to_sheet(combinedSheets12);
 let wsRevivedOs = XLSX.utils.json_to_sheet(revivedClaims);
+let wsClosedASNoClaim = XLSX.utils.json_to_sheet(closedAsNoClaim);
 let wsInBeginingEnd = XLSX.utils.json_to_sheet(osRepeatedClaimNo);
 let wsUpMovement = XLSX.utils.json_to_sheet(movementUp);
 let wsDownMovement = XLSX.utils.json_to_sheet(movementDown);
@@ -377,6 +375,7 @@ let wsSummary = XLSX.utils.json_to_sheet(movementSummary, {
 wb.Sheets["Combined OS"] = wsCombinedOs;
 wb.Sheets["Added OS"] = wsAddedOs;
 wb.Sheets["Removed OS"] = wsRemovedOs;
+wb.Sheets["closed as no claim"] = wsClosedASNoClaim; 
 wb.Sheets["in OSBegining & OSend"] = wsInBeginingEnd;
 wb.Sheets["Movement up"] = wsUpMovement;
 wb.Sheets["Movement down"] = wsDownMovement;

@@ -102,7 +102,7 @@ let osRepeatedClaimNo = osNoChange.map(function(claim) {
   return newObj;
 });
 
-// cover camelCase to normalCASE Uppercase
+// cover camelCase to NORMAL CASE Uppercase
 
 function unCamelCase(str){
     str = str.replace(/([a-z\xE0-\xFF])([A-Z\xC0\xDF])/g, '$1 $2');
@@ -340,6 +340,13 @@ let revivedClaims = _.differenceBy(
   intimated,
   "claimNo"
 );
+
+
+
+let closedAsNoClaim = _.differenceBy(removedOsBeginToEndMonth, payment, "claimNo");
+
+console.log( "removed ---> : " + removedOsBeginToEndMonth.length + "\n  paid---> : " + payment.length );
+
 
 // create work book
 let wb = XLSX.utils.book_new();

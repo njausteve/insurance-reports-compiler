@@ -9,6 +9,8 @@ const objectRenameKeys = require("object-rename-keys");
 let sheet1 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[0]]);
 let sheet2 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[1]]);
 let sheet3 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[2]]);
+let sheet4 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[3]]);
+
 let summary = [];
 
 let osBeginKeyChangesMap = {
@@ -46,10 +48,25 @@ let intimatedKeyChangesMap = {
   "INTIMATION RESERVE": "intimationReserve"
 };
 
+
+let paymentKeyChangesMap = {
+    CLASS : "insuranceClass",
+    "DATE OF CHEQUE" : "dateOfcheque",
+    "CHEQUE NO"	: "chequeNo",
+    "CLAIM NO":	"claimNo",
+    "POLICY HOLDER"	:"placeHolder",
+    "UW YEAR": "uwYear",
+    "PAYEE":"payee",
+    "PAID AMOUNT": "paidAmount"
+};	
+
 let osBeginMonth = objectRenameKeys(sheet1, osBeginKeyChangesMap);
 let osEndMonth = objectRenameKeys(sheet2, osEndMonthKeyChangesMap);
 let intimated = objectRenameKeys(sheet3, intimatedKeyChangesMap);
+let payment = objectRenameKeys(sheet4, paymentKeyChangesMap);
 // //let intimated = objectRenameKeys(sheet3, osKeyChangesMap);
+
+console.log(payment);
 
 let combinedOsWithDuplicates = _.concat(osEndMonth, osBeginMonth, "claimNo");
 
@@ -234,8 +251,6 @@ function calculateMovementPerclass(targetArray) {
     wiba: wiba.length,
     medical: medical.length
   };
-
-  console.log(totalMovement);
 
   return totalMovement;
 }

@@ -11,8 +11,6 @@ let sheet2 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[1]]);
 let sheet3 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[2]]);
 let sheet4 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[3]]);
 
-let summary = [];
-
 let osBeginKeyChangesMap = {
   CLASS: "insuranceClass",
   "POLICY NO": "policyNo",
@@ -137,10 +135,9 @@ function unCamelCase(str) {
 
 // convert to currency format
 
-function toCurrency(value){
-  return value.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,');
+function toCurrency(value) {
+  return value.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,");
 }
-
 
 // convert "200,000.75" to 200000.75
 
@@ -181,6 +178,7 @@ let movementDown = osRepeatedClaimNo
 //   sheet with total up + down
 
 let movementUpDown = _.concat(movementUp, movementDown);
+
 
 function calculatePerclass(targetArray, valueUsedToCalculate) {
   let ValuesPerClass = {};
@@ -289,11 +287,10 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
 }
 
 // total movement summary (up + down)
-let movementSummary = [];
 
 function getMovementSummary() {
+  let movementSummary = [];
   let newObj = {};
-
   let movementObj = calculatePerclass(movementUpDown, "difference");
 
   for (const prop in movementObj) {
@@ -301,7 +298,7 @@ function getMovementSummary() {
       movementSummary.push({
         CLASS: unCamelCase(prop),
         COUNT: movementObj.count[prop],
-        TOTAL: movementObj[prop]
+        TOTAL: toCurrency(movementObj[prop])
       });
     }
   }
@@ -309,14 +306,13 @@ function getMovementSummary() {
   movementSummary.push({
     CLASS: "TOTAL MOVEMENT",
     COUNT: movementUp.length + movementDown.length,
-    TOTAL: movementTotal(movementUp) + movementTotal(movementDown)
+    TOTAL: toCurrency(movementTotal(movementUp) + movementTotal(movementDown))
   });
+
+  return movementSummary;
 }
 
-getMovementSummary();
-
-// get summary
-
+// get summary for any sheet
 function getSummary(targetSheet, valueToRefer) {
   let summary = [];
   let summaryObj = calculatePerclass(targetSheet, valueToRefer);
@@ -344,35 +340,46 @@ function getSummary(targetSheet, valueToRefer) {
   return summary;
 }
 
-/*  Insurance Classes 
+// claims in intimated and paid without payment data
 
-ACCIDENT - GROUP PERSONAL ACCIDENT (MGL/09/092), INBOUND TRAVEL INSURANCE POLICY (MGL/09/095), INDIVIDUAL PERSONAL ACCIDENT (MGL/09/090), OVERSEAS TRAVEL INSURANCE COVER  (M1GL/09/097)- 
+let intimatedAndPaidIncomplete = _.intersectionBy(
+  intimated,
+  payment,
+  "claimNo"
+);
 
-ENGINEERING - CONTRACTORS ALL RISK, ELECTRONIC EQUIPMENT, ERECTION ALL RISK, L.O.P. FOLLOWING MACHINERY B/DOWN, MACHINERY BREAKDOWN -MGL/02/
 
-MOTOR PRIVATE - MOTOR CYCLE, MOTOR PRIVATE, MOTOR PRIVATE ENHANCED - MGL/07
+// intimated and paid all {duplicates}
 
-MOTOR COMMERCIAL - MOTOR COMMERCIAL, MOTOR GENERAL CARTAGE, MOTOR TRACTORS, MOTOR TRADE - MGL/08
+let intimatedPaidMovementwithDuplicates =  _.concat(intimated, payment);
 
-MOTOR PSV HIRE - MOTOR(PSV) PRIVATE HIRE - MGL/08/084
 
-MISCELLANEOUS - BONDS ( I A TA) FINANCIAL GUARA, GOLFERS/SPORTSMAN INSURANCE - MGL/12
 
-LIABILITIES - CARRIERS LIABILITY POLICY, CONTRACTUAL LIABILITY POLICY, PORT LIABILITY POLICY, PUBLIC LIABILITY, WAREHOUSE LIABILITY POLICY - MGL/05
 
-FIRE DOMESTIC - FIRE DOMESTIC(HOC) - MGL/03/
+let intimatedPaidMovement = intimatedAndPaidIncomplete.map(function(claim) {
+  let newObj = {};
 
-MARINE - GOODS IN TRANSIT, MARINE CARGO, MARINE HULL, MARINE OPEN COVER - MGL/06
+  intimatedPaidMovementwithDuplicates.map(function(combineClaim) {
+    if (combineClaim.claimNo === claim.claimNo) {
+      for (const prop in combineClaim) {
+        newObj[prop] = combineClaim[prop];
 
-FIRE INDUSTRIAL - FIRE INDUSTRIAL, INDUSTRIAL ALL RISKS - MGL/04
+        if(newObj.paidAmount !=  undefined ){
+        newObj.difference = toFloat(newObj.paidAmount) - toFloat(newObj.intimationReserve);        
+        }
+      }
 
-MEDICAL - ACCIDENT HOSPITALISATION INS.P (MGL/09/099), HEALTH/MEDICAL EXPENSES INSURANCE (MGL/09/091), INDIVIDUAL MEDICAL INSURANCE (MGL/09/096)
+    }
+  });
 
-WIBA - WORKERS INJURUY BENEFIT ACT, WORKMEN'S COMP (COMMON LAW) COVER, WORKMEN'S COMPENSATION(ACT) CO - MGL/11/
+  return newObj;
 
-THEFT - ALL RISKS, BANKERS BLANKET INSURANCE, BUGRLARY, CASH IN TRANSIT, FIDELITY GUARANTEE - MGL/10/
+  
+});
 
-*/
+
+let intimatedPaidSummary = getSummary(intimatedPaidMovement, "difference");
+
 
 // combined sheet OS begining and end no dubplictes:
 
@@ -404,16 +411,23 @@ let revivedClaims = _.differenceBy(
 );
 
 // sheet for claims closed as having no claim
-
 let closedAsNoClaim = _.differenceBy(
   removedOsBeginToEndMonth,
   payment,
   "claimNo"
 );
 
+
+// summary sheets
+
 let closedAsNoClaimSummary = getSummary(closedAsNoClaim, "osBeginEstimate");
 
 let revivedClaimsSummary = getSummary(revivedClaims, "osEndMonthEstimate");
+
+let movementSummary = getMovementSummary();
+
+
+
 
 
 
@@ -422,7 +436,9 @@ let wb = XLSX.utils.book_new();
 
 // create sheetsNames
 wb.SheetNames.push(
-  "ALL COMBINED SORTED",
+  "MOVEMENT SUMMARY",
+  "CLOSED AS NO CLAIM SUMMARY",
+  "REVIVED CLAIMS SUMMARY",
   "REMOVED CLAIMS",
   "ADDED CLAIMS",
   "REVIVED CLAIMS",
@@ -430,26 +446,16 @@ wb.SheetNames.push(
   "CLAIMS IN LAST AND CURRENT OS",
   "MOVED UP CLAIMS",
   "MOVED DOWN CLAIMS",
-  "MOVEMENT SUMMARY",
-  "CLOSED AS NO CLAIM SUMMARY",
-  "REVIVED CLAIMS SUMMARY"
+  "ALL COMBINED SORTED"
+  
 );
+
 
 let summaryHeader = {
   header: ["CLASS", "COUNT", "TOTAL"]
 };
 
-let wsRemovedOs = XLSX.utils.json_to_sheet(
-  toExcelSheet(removedOsBeginToEndMonth)
-);
-let wsAddedOs = XLSX.utils.json_to_sheet(
-  toExcelSheet(addedOsEndFromBeginMonth)
-);
-let wsCombinedOs = XLSX.utils.json_to_sheet(toExcelSheet(combinedSheets12));
-let wsRevivedOs = XLSX.utils.json_to_sheet(toExcelSheet(revivedClaims));
-let wsClosedASNoClaim = XLSX.utils.json_to_sheet(toExcelSheet(closedAsNoClaim));
-let wsInBeginingEnd = XLSX.utils.json_to_sheet(toExcelSheet(osRepeatedClaimNo));
-let wsUpMovement = XLSX.utils.json_to_sheet(toExcelSheet(movementUp), {
+let movementHeader = {
   header: [
     "CLASS",
     "POLICY NO",
@@ -463,9 +469,65 @@ let wsUpMovement = XLSX.utils.json_to_sheet(toExcelSheet(movementUp), {
     "END OS ESTIMATE",
     "DIFFERENCE"
   ]
-});
-let wsDownMovement = XLSX.utils.json_to_sheet(toExcelSheet(movementDown));
-let wsSummary = XLSX.utils.json_to_sheet(movementSummary, summaryHeader);
+};
+
+let closedAsnoClaimHeader = {
+  header: [
+    "CLASS",
+    "POLICY NO",
+    "CLAIM NO",
+    "INSURED NAME",
+    "DATE REPORTED",
+    "DATE OF LOSS",
+    "PERIOD FROM",
+    "PERIOD TO",
+    "BEGINING OS ESTIMATE"
+  ]
+};
+
+let revivedHeader = {
+  header: [
+    "CLASS",
+    "POLICY NO",
+    "CLAIM NO",
+    "INSURED NAME",
+    "DATE REPORTED",
+    "DATE OF LOSS",
+    "PERIOD FROM",
+    "PERIOD TO",
+    "END OS ESTIMATE"
+  ]
+};
+
+let wsRemovedOs = XLSX.utils.json_to_sheet(
+  toExcelSheet(removedOsBeginToEndMonth)
+);
+let wsAddedOs = XLSX.utils.json_to_sheet(
+  toExcelSheet(addedOsEndFromBeginMonth)
+);
+let wsCombinedOs = XLSX.utils.json_to_sheet(toExcelSheet(intimatedPaidMovement));
+let wsRevivedOs = XLSX.utils.json_to_sheet(
+  toExcelSheet(revivedClaims),
+  revivedHeader
+);
+let wsClosedASNoClaim = XLSX.utils.json_to_sheet(
+  toExcelSheet(closedAsNoClaim),
+  closedAsnoClaimHeader
+);
+let wsInBeginingEnd = XLSX.utils.json_to_sheet(toExcelSheet(osRepeatedClaimNo));
+
+let wsUpMovement = XLSX.utils.json_to_sheet(
+  toExcelSheet(movementUp),
+  movementHeader
+);
+let wsDownMovement = XLSX.utils.json_to_sheet(
+  toExcelSheet(movementDown),
+  movementHeader
+);
+let wsMovementSummary = XLSX.utils.json_to_sheet(
+  movementSummary,
+  summaryHeader
+);
 let wsClosedAsNoClaimSummary = XLSX.utils.json_to_sheet(
   closedAsNoClaimSummary,
   summaryHeader
@@ -479,17 +541,67 @@ wb.Sheets["ALL COMBINED SORTED"] = wsCombinedOs;
 wb.Sheets["ADDED CLAIMS"] = wsAddedOs;
 wb.Sheets["REMOVED CLAIMS"] = wsRemovedOs;
 wb.Sheets["CLOSED AS NO CLAIM"] = wsClosedASNoClaim;
-wb.Sheets["CLAIMS IN LAST AND CURRENT OS ESTIMATE"] = wsInBeginingEnd;
+wb.Sheets["CLAIMS IN LAST AND CURRENT OS"] = wsInBeginingEnd;
 wb.Sheets["MOVED UP CLAIMS"] = wsUpMovement;
 wb.Sheets["MOVED DOWN CLAIMS"] = wsDownMovement;
 wb.Sheets["REVIVED CLAIMS"] = wsRevivedOs;
-wb.Sheets["MOVEMENT SUMMARY"] = wsSummary;
+wb.Sheets["MOVEMENT SUMMARY"] = wsMovementSummary;
 wb.Sheets["CLOSED AS NO CLAIM SUMMARY"] = wsClosedAsNoClaimSummary;
 wb.Sheets["REVIVED CLAIMS SUMMARY"] = wsRevivedClaimSummary;
+
+
+
+
 
 XLSX.write(wb, { bookType: "xlsx", type: "binary" });
 
 del.sync(["*.xlsx"]);
 XLSX.writeFile(wb, "Final Report.xlsx");
 
-// console.log(revivedClaims);
+
+
+// TODO: separate code into modules.
+
+//TODO: change formating of values to end sheets
+
+// TODO: remove difference col in CLAIMS IN LAST AND CURRENT OS
+
+
+
+
+
+
+
+
+
+
+
+/*  Insurance Classes 
+
+ACCIDENT - GROUP PERSONAL ACCIDENT (MGL/09/092), INBOUND TRAVEL INSURANCE POLICY (MGL/09/095), INDIVIDUAL PERSONAL ACCIDENT (MGL/09/090), OVERSEAS TRAVEL INSURANCE COVER  (M1GL/09/097)- 
+
+ENGINEERING - CONTRACTORS ALL RISK, ELECTRONIC EQUIPMENT, ERECTION ALL RISK, L.O.P. FOLLOWING MACHINERY B/DOWN, MACHINERY BREAKDOWN -MGL/02/
+
+MOTOR PRIVATE - MOTOR CYCLE, MOTOR PRIVATE, MOTOR PRIVATE ENHANCED - MGL/07
+
+MOTOR COMMERCIAL - MOTOR COMMERCIAL, MOTOR GENERAL CARTAGE, MOTOR TRACTORS, MOTOR TRADE - MGL/08
+
+MOTOR PSV HIRE - MOTOR(PSV) PRIVATE HIRE - MGL/08/084
+
+MISCELLANEOUS - BONDS ( I A TA) FINANCIAL GUARA, GOLFERS/SPORTSMAN INSURANCE - MGL/12
+
+LIABILITIES - CARRIERS LIABILITY POLICY, CONTRACTUAL LIABILITY POLICY, PORT LIABILITY POLICY, PUBLIC LIABILITY, WAREHOUSE LIABILITY POLICY - MGL/05
+
+FIRE DOMESTIC - FIRE DOMESTIC(HOC) - MGL/03/
+
+MARINE - GOODS IN TRANSIT, MARINE CARGO, MARINE HULL, MARINE OPEN COVER - MGL/06
+
+FIRE INDUSTRIAL - FIRE INDUSTRIAL, INDUSTRIAL ALL RISKS - MGL/04
+
+MEDICAL - ACCIDENT HOSPITALISATION INS.P (MGL/09/099), HEALTH/MEDICAL EXPENSES INSURANCE (MGL/09/091), INDIVIDUAL MEDICAL INSURANCE (MGL/09/096)
+
+WIBA - WORKERS INJURUY BENEFIT ACT, WORKMEN'S COMP (COMMON LAW) COVER, WORKMEN'S COMPENSATION(ACT) CO - MGL/11/
+
+THEFT - ALL RISKS, BANKERS BLANKET INSURANCE, BUGRLARY, CASH IN TRANSIT, FIDELITY GUARANTEE - MGL/10/
+
+*/

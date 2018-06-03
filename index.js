@@ -48,24 +48,45 @@ let intimatedKeyChangesMap = {
   "INTIMATION RESERVE": "intimationReserve"
 };
 
-
 let paymentKeyChangesMap = {
-    CLASS : "insuranceClass",
-    "DATE OF CHEQUE" : "dateOfcheque",
-    "CHEQUE NO"	: "chequeNo",
-    "CLAIM NO":	"claimNo",
-    "POLICY HOLDER"	:"placeHolder",
-    "UW YEAR": "uwYear",
-    "PAYEE":"payee",
-    "PAID AMOUNT": "paidAmount"
-};	
+  CLASS: "insuranceClass",
+  "DATE OF CHEQUE": "dateOfcheque",
+  "CHEQUE NO": "chequeNo",
+  "CLAIM NO": "claimNo",
+  "POLICY HOLDER": "policyHolder",
+  "UW YEAR": "uwYear",
+  PAYEE: "payee",
+  "PAID AMOUNT": "paidAmount"
+};
+
+let printToExcelKeysmap = {
+  insuranceClass: "CLASS",
+  policyNo: "POLICY NO",
+  claimNo: "CLAIM NO",
+  insuredName: "INSURED NAME",
+  dateReported: "DATE REPORTED",
+  dateOfLoss: "DATE OF LOSS",
+  periodFrom: "PERIOD FROM",
+  periodTo: "PERIOD TO",
+  osBeginEstimate: "BEGINING OS ESTIMATE",
+  osEndMonthEstimate: "END OS ESTIMATE",
+  insured: "INSURED",
+  Agency: "AGENCY",
+  intimationReserve: "INTIMATION RESERVE",
+  dateOfcheque: "DATE OF CHEQUE",
+  chequeNo: "CHEQUE NO",
+  policyHolder: "POLICY HOLDER",
+  uwYear: "UW YEAR",
+  payee: "PAYEE",
+  paidAmount: "PAID AMOUNT",
+  difference: "DIFFERENCE"
+};
 
 let osBeginMonth = objectRenameKeys(sheet1, osBeginKeyChangesMap);
 let osEndMonth = objectRenameKeys(sheet2, osEndMonthKeyChangesMap);
 let intimated = objectRenameKeys(sheet3, intimatedKeyChangesMap);
 let payment = objectRenameKeys(sheet4, paymentKeyChangesMap);
 // //let intimated = objectRenameKeys(sheet3, osKeyChangesMap);
-
 
 let combinedOsWithDuplicates = _.concat(osEndMonth, osBeginMonth, "claimNo");
 
@@ -101,19 +122,30 @@ let osRepeatedClaimNo = osNoChange.map(function(claim) {
   return newObj;
 });
 
+// convert all keys to original
+function toExcelSheet(sheetToprint) {
+  return objectRenameKeys(sheetToprint, printToExcelKeysmap);
+}
+
 // cover camelCase to NORMAL CASE Uppercase
 
-function unCamelCase(str){
-    str = str.replace(/([a-z\xE0-\xFF])([A-Z\xC0\xDF])/g, '$1 $2');
-    str = str.toLowerCase(); //add space between camelCase text
-    return str.toUpperCase();
-  }
-  
+function unCamelCase(str) {
+  str = str.replace(/([a-z\xE0-\xFF])([A-Z\xC0\xDF])/g, "$1 $2");
+  str = str.toLowerCase(); //add space between camelCase text
+  return str.toUpperCase();
+}
+
+// convert to currency format
+
+function toCurrency(value){
+  return value.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, '$1,');
+}
+
 
 // convert "200,000.75" to 200000.75
 
 function toFloat(stringValue) {
-  return parseFloat(stringValue.replace(/,/g, ""));
+  return parseFloat(stringValue.toString().replace(/,/g, ""));
 }
 
 function calcMovement(claim) {
@@ -150,9 +182,8 @@ let movementDown = osRepeatedClaimNo
 
 let movementUpDown = _.concat(movementUp, movementDown);
 
-function calculateMovementPerclass(targetArray) {
-  let totalMovement = {};
-
+function calculatePerclass(targetArray, valueUsedToCalculate) {
+  let ValuesPerClass = {};
   let motorPrivate = [];
   let motorPsvHire = [];
   let miscellaneous = [];
@@ -172,70 +203,73 @@ function calculateMovementPerclass(targetArray) {
     claimPrefixShort = claim.policyNo.slice(0, 6);
     claimPrefixLong = claim.policyNo.slice(0, 10);
 
+    valueToPush = toFloat(claim[valueUsedToCalculate]);
+
     if (claimPrefixShort == "MGL/07") {
-      motorPrivate.push(claim.difference);
+      motorPrivate.push(valueToPush);
+
       // motor private
     } else if (claimPrefixLong === "MGL/08/084") {
       // MOTOR PSV HIRE
-      motorPsvHire.push(claim.difference);
+      motorPsvHire.push(valueToPush);
     } else if (claimPrefixShort === "MGL/12") {
       // MISCELLANEOUS
 
-      miscellaneous.push(claim.difference);
+      miscellaneous.push(valueToPush);
     } else if (claimPrefixShort === "MGL/03") {
       // FIRE DOMESTIC
 
-      fireDomestic.push(claim.difference);
+      fireDomestic.push(valueToPush);
     } else if (claimPrefixShort === "MGL/06") {
       // MARINE
 
-      marine.push(claim.difference);
+      marine.push(valueToPush);
     } else if (claimPrefixShort === "MGL/04") {
-      fireIndustrial.push(claim.difference);
+      fireIndustrial.push(valueToPush);
       // FIRE INDUSTRIAL
     } else if (claimPrefixShort === "MGL/05") {
-      liabilities.push(claim.difference);
+      liabilities.push(valueToPush);
       // LIABILITIES
     } else if (claimPrefixShort === "MGL/08") {
       // MOTOR COMMERCIAL
-      motorCommercial.push(claim.difference);
+      motorCommercial.push(valueToPush);
     } else if (claimPrefixShort === "MGL/02") {
       // ENGINEERING
-      engineering.push(claim.difference);
+      engineering.push(valueToPush);
     } else if (claimPrefixShort === "MGL/10") {
       // THEFT
-      theft.push(claim.difference);
+      theft.push(valueToPush);
     } else if (claimPrefixShort === "MGL/11") {
       // WIBA
-      wiba.push(claim.difference);
+      wiba.push(valueToPush);
     } else if (
       claimPrefixLong === "MGL/09/096" ||
       claimPrefixLong === "MGL/09/091" ||
       claimPrefixLong === "MGL/09/099"
     ) {
       // medical
-      medical.push(claim.difference);
+      medical.push(valueToPush);
     } else {
       // ACCIDENT
-      accident.push(claim.difference);
+      accident.push(valueToPush);
     }
   });
 
-  totalMovement.motorPrivate = _.sum(motorPrivate);
-  totalMovement.motorPsvHire = _.sum(motorPsvHire);
-  totalMovement.miscellaneous = _.sum(miscellaneous);
-  totalMovement.fireDomestic = _.sum(fireDomestic);
-  totalMovement.marine = _.sum(marine);
-  totalMovement.fireIndustrial = _.sum(fireIndustrial);
-  totalMovement.liabilities = _.sum(liabilities);
-  totalMovement.motorCommercial = _.sum(motorCommercial);
-  totalMovement.accident = _.sum(accident);
-  totalMovement.engineering = _.sum(engineering);
-  totalMovement.theft = _.sum(theft);
-  totalMovement.wiba = _.sum(wiba);
-  totalMovement.medical = _.sum(medical);
+  ValuesPerClass.motorPrivate = _.sum(motorPrivate);
+  ValuesPerClass.motorPsvHire = _.sum(motorPsvHire);
+  ValuesPerClass.miscellaneous = _.sum(miscellaneous);
+  ValuesPerClass.fireDomestic = _.sum(fireDomestic);
+  ValuesPerClass.marine = _.sum(marine);
+  ValuesPerClass.fireIndustrial = _.sum(fireIndustrial);
+  ValuesPerClass.liabilities = _.sum(liabilities);
+  ValuesPerClass.motorCommercial = _.sum(motorCommercial);
+  ValuesPerClass.accident = _.sum(accident);
+  ValuesPerClass.engineering = _.sum(engineering);
+  ValuesPerClass.theft = _.sum(theft);
+  ValuesPerClass.wiba = _.sum(wiba);
+  ValuesPerClass.medical = _.sum(medical);
 
-  totalMovement.count = {
+  ValuesPerClass.count = {
     motorPrivate: motorPrivate.length,
     motorPsvHire: motorPsvHire.length,
     miscellaneous: miscellaneous.length,
@@ -251,7 +285,7 @@ function calculateMovementPerclass(targetArray) {
     medical: medical.length
   };
 
-  return totalMovement;
+  return ValuesPerClass;
 }
 
 // total movement summary (up + down)
@@ -260,16 +294,10 @@ let movementSummary = [];
 function getMovementSummary() {
   let newObj = {};
 
-  newObj.CLASS = "TOTAL MOVEMENT";
-  newObj.COUNT = movementUp.length + movementDown.length;
-  newObj.TOTAL = movementTotal(movementUp) + movementTotal(movementDown);
-  movementSummary.push(newObj);
-
-  let movementObj = calculateMovementPerclass(movementUpDown);
+  let movementObj = calculatePerclass(movementUpDown, "difference");
 
   for (const prop in movementObj) {
-    
-    if(prop != 'count'){
+    if (prop != "count") {
       movementSummary.push({
         CLASS: unCamelCase(prop),
         COUNT: movementObj.count[prop],
@@ -277,9 +305,44 @@ function getMovementSummary() {
       });
     }
   }
+
+  movementSummary.push({
+    CLASS: "TOTAL MOVEMENT",
+    COUNT: movementUp.length + movementDown.length,
+    TOTAL: movementTotal(movementUp) + movementTotal(movementDown)
+  });
 }
 
 getMovementSummary();
+
+// get summary
+
+function getSummary(targetSheet, valueToRefer) {
+  let summary = [];
+  let summaryObj = calculatePerclass(targetSheet, valueToRefer);
+
+  let sumTotal = 0;
+
+  for (const prop in summaryObj) {
+    if (prop != "count") {
+      sumTotal = sumTotal + summaryObj[prop];
+
+      summary.push({
+        CLASS: unCamelCase(prop),
+        COUNT: summaryObj.count[prop],
+        TOTAL: toCurrency(summaryObj[prop])
+      });
+    }
+  }
+
+  summary.push({
+    CLASS: "TOTAL SUM ",
+    COUNT: _.sum(_.values(summaryObj.count)),
+    TOTAL: toCurrency(sumTotal)
+  });
+
+  return summary;
+}
 
 /*  Insurance Classes 
 
@@ -340,8 +403,18 @@ let revivedClaims = _.differenceBy(
   "claimNo"
 );
 
+// sheet for claims closed as having no claim
 
-let closedAsNoClaim = _.differenceBy(removedOsBeginToEndMonth, payment, "claimNo");
+let closedAsNoClaim = _.differenceBy(
+  removedOsBeginToEndMonth,
+  payment,
+  "claimNo"
+);
+
+let closedAsNoClaimSummary = getSummary(closedAsNoClaim, "osBeginEstimate");
+
+let revivedClaimsSummary = getSummary(revivedClaims, "osEndMonthEstimate");
+
 
 
 // create work book
@@ -349,38 +422,70 @@ let wb = XLSX.utils.book_new();
 
 // create sheetsNames
 wb.SheetNames.push(
-  "Combined OS",
-  "Removed OS",
-  "Added OS",
-  "Revived claims",
-  "closed as no claim",
-  "in OSBegining & OSend",
-  "Movement up",
-  "Movement down",
-  "summary"
+  "ALL COMBINED SORTED",
+  "REMOVED CLAIMS",
+  "ADDED CLAIMS",
+  "REVIVED CLAIMS",
+  "CLOSED AS NO CLAIM",
+  "CLAIMS IN LAST AND CURRENT OS",
+  "MOVED UP CLAIMS",
+  "MOVED DOWN CLAIMS",
+  "MOVEMENT SUMMARY",
+  "CLOSED AS NO CLAIM SUMMARY",
+  "REVIVED CLAIMS SUMMARY"
 );
 
-let wsRemovedOs = XLSX.utils.json_to_sheet(removedOsBeginToEndMonth);
-let wsAddedOs = XLSX.utils.json_to_sheet(addedOsEndFromBeginMonth);
-let wsCombinedOs = XLSX.utils.json_to_sheet(combinedSheets12);
-let wsRevivedOs = XLSX.utils.json_to_sheet(revivedClaims);
-let wsClosedASNoClaim = XLSX.utils.json_to_sheet(closedAsNoClaim);
-let wsInBeginingEnd = XLSX.utils.json_to_sheet(osRepeatedClaimNo);
-let wsUpMovement = XLSX.utils.json_to_sheet(movementUp);
-let wsDownMovement = XLSX.utils.json_to_sheet(movementDown);
-let wsSummary = XLSX.utils.json_to_sheet(movementSummary, {
+let summaryHeader = {
   header: ["CLASS", "COUNT", "TOTAL"]
-});
+};
 
-wb.Sheets["Combined OS"] = wsCombinedOs;
-wb.Sheets["Added OS"] = wsAddedOs;
-wb.Sheets["Removed OS"] = wsRemovedOs;
-wb.Sheets["closed as no claim"] = wsClosedASNoClaim; 
-wb.Sheets["in OSBegining & OSend"] = wsInBeginingEnd;
-wb.Sheets["Movement up"] = wsUpMovement;
-wb.Sheets["Movement down"] = wsDownMovement;
-wb.Sheets["Revived claims"] = wsRevivedOs;
-wb.Sheets["summary"] = wsSummary;
+let wsRemovedOs = XLSX.utils.json_to_sheet(
+  toExcelSheet(removedOsBeginToEndMonth)
+);
+let wsAddedOs = XLSX.utils.json_to_sheet(
+  toExcelSheet(addedOsEndFromBeginMonth)
+);
+let wsCombinedOs = XLSX.utils.json_to_sheet(toExcelSheet(combinedSheets12));
+let wsRevivedOs = XLSX.utils.json_to_sheet(toExcelSheet(revivedClaims));
+let wsClosedASNoClaim = XLSX.utils.json_to_sheet(toExcelSheet(closedAsNoClaim));
+let wsInBeginingEnd = XLSX.utils.json_to_sheet(toExcelSheet(osRepeatedClaimNo));
+let wsUpMovement = XLSX.utils.json_to_sheet(toExcelSheet(movementUp), {
+  header: [
+    "CLASS",
+    "POLICY NO",
+    "CLAIM NO",
+    "INSURED NAME",
+    "DATE REPORTED",
+    "DATE OF LOSS",
+    "PERIOD FROM",
+    "PERIOD TO",
+    "BEGINING OS ESTIMATE",
+    "END OS ESTIMATE",
+    "DIFFERENCE"
+  ]
+});
+let wsDownMovement = XLSX.utils.json_to_sheet(toExcelSheet(movementDown));
+let wsSummary = XLSX.utils.json_to_sheet(movementSummary, summaryHeader);
+let wsClosedAsNoClaimSummary = XLSX.utils.json_to_sheet(
+  closedAsNoClaimSummary,
+  summaryHeader
+);
+let wsRevivedClaimSummary = XLSX.utils.json_to_sheet(
+  revivedClaimsSummary,
+  summaryHeader
+);
+
+wb.Sheets["ALL COMBINED SORTED"] = wsCombinedOs;
+wb.Sheets["ADDED CLAIMS"] = wsAddedOs;
+wb.Sheets["REMOVED CLAIMS"] = wsRemovedOs;
+wb.Sheets["CLOSED AS NO CLAIM"] = wsClosedASNoClaim;
+wb.Sheets["CLAIMS IN LAST AND CURRENT OS ESTIMATE"] = wsInBeginingEnd;
+wb.Sheets["MOVED UP CLAIMS"] = wsUpMovement;
+wb.Sheets["MOVED DOWN CLAIMS"] = wsDownMovement;
+wb.Sheets["REVIVED CLAIMS"] = wsRevivedOs;
+wb.Sheets["MOVEMENT SUMMARY"] = wsSummary;
+wb.Sheets["CLOSED AS NO CLAIM SUMMARY"] = wsClosedAsNoClaimSummary;
+wb.Sheets["REVIVED CLAIMS SUMMARY"] = wsRevivedClaimSummary;
 
 XLSX.write(wb, { bookType: "xlsx", type: "binary" });
 

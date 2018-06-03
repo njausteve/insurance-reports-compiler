@@ -179,7 +179,6 @@ let movementDown = osRepeatedClaimNo
 
 let movementUpDown = _.concat(movementUp, movementDown);
 
-
 function calculatePerclass(targetArray, valueUsedToCalculate) {
   let ValuesPerClass = {};
   let motorPrivate = [];
@@ -304,7 +303,7 @@ function getMovementSummary() {
   }
 
   movementSummary.push({
-    CLASS: "TOTAL MOVEMENT",
+    CLASS: "TOTAL SUM",
     COUNT: movementUp.length + movementDown.length,
     TOTAL: toCurrency(movementTotal(movementUp) + movementTotal(movementDown))
   });
@@ -332,7 +331,7 @@ function getSummary(targetSheet, valueToRefer) {
   }
 
   summary.push({
-    CLASS: "TOTAL SUM ",
+    CLASS: "TOTAL SUM",
     COUNT: _.sum(_.values(summaryObj.count)),
     TOTAL: toCurrency(sumTotal)
   });
@@ -348,13 +347,9 @@ let intimatedAndPaidIncomplete = _.intersectionBy(
   "claimNo"
 );
 
-
 // intimated and paid all {duplicates}
 
-let intimatedPaidMovementwithDuplicates =  _.concat(intimated, payment);
-
-
-
+let intimatedPaidMovementwithDuplicates = _.concat(intimated, payment);
 
 let intimatedPaidMovement = intimatedAndPaidIncomplete.map(function(claim) {
   let newObj = {};
@@ -364,22 +359,18 @@ let intimatedPaidMovement = intimatedAndPaidIncomplete.map(function(claim) {
       for (const prop in combineClaim) {
         newObj[prop] = combineClaim[prop];
 
-        if(newObj.paidAmount !=  undefined ){
-        newObj.difference = toFloat(newObj.paidAmount) - toFloat(newObj.intimationReserve);        
+        if (newObj.paidAmount != undefined) {
+          newObj.difference =
+            toFloat(newObj.paidAmount) - toFloat(newObj.intimationReserve);
         }
       }
-
     }
   });
 
   return newObj;
-
-  
 });
 
-
 let intimatedPaidSummary = getSummary(intimatedPaidMovement, "difference");
-
 
 // combined sheet OS begining and end no dubplictes:
 
@@ -417,7 +408,6 @@ let closedAsNoClaim = _.differenceBy(
   "claimNo"
 );
 
-
 // summary sheets
 
 let closedAsNoClaimSummary = getSummary(closedAsNoClaim, "osBeginEstimate");
@@ -426,10 +416,25 @@ let revivedClaimsSummary = getSummary(revivedClaims, "osEndMonthEstimate");
 
 let movementSummary = getMovementSummary();
 
+let totalMovementSummary = movementSummary.map(function(moveClass) {
+  let newObj = {};
 
+  intimatedPaidSummary.map(function(intPaidClass) {
+    for (const prop in intPaidClass) {
+      if (intPaidClass[prop] == moveClass.CLASS) {
+        newObj = {
+          CLASS: moveClass.CLASS,
+          COUNT: intPaidClass.COUNT + moveClass.COUNT,
+          TOTAL: toCurrency(
+            toFloat(intPaidClass.TOTAL) + toFloat(moveClass.TOTAL)
+          )
+        };
+      }
+    }
+  });
 
-
-
+  return newObj;
+});
 
 // create work book
 let wb = XLSX.utils.book_new();
@@ -447,9 +452,7 @@ wb.SheetNames.push(
   "MOVED UP CLAIMS",
   "MOVED DOWN CLAIMS",
   "ALL COMBINED SORTED"
-  
 );
-
 
 let summaryHeader = {
   header: ["CLASS", "COUNT", "TOTAL"]
@@ -505,7 +508,9 @@ let wsRemovedOs = XLSX.utils.json_to_sheet(
 let wsAddedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(addedOsEndFromBeginMonth)
 );
-let wsCombinedOs = XLSX.utils.json_to_sheet(toExcelSheet(intimatedPaidMovement));
+let wsCombinedOs = XLSX.utils.json_to_sheet(
+  toExcelSheet(intimatedPaidMovement)
+);
 let wsRevivedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(revivedClaims),
   revivedHeader
@@ -525,7 +530,7 @@ let wsDownMovement = XLSX.utils.json_to_sheet(
   movementHeader
 );
 let wsMovementSummary = XLSX.utils.json_to_sheet(
-  movementSummary,
+  totalMovementSummary,
   summaryHeader
 );
 let wsClosedAsNoClaimSummary = XLSX.utils.json_to_sheet(
@@ -549,32 +554,16 @@ wb.Sheets["MOVEMENT SUMMARY"] = wsMovementSummary;
 wb.Sheets["CLOSED AS NO CLAIM SUMMARY"] = wsClosedAsNoClaimSummary;
 wb.Sheets["REVIVED CLAIMS SUMMARY"] = wsRevivedClaimSummary;
 
-
-
-
-
 XLSX.write(wb, { bookType: "xlsx", type: "binary" });
 
 del.sync(["*.xlsx"]);
 XLSX.writeFile(wb, "Final Report.xlsx");
-
-
 
 // TODO: separate code into modules.
 
 //TODO: change formating of values to end sheets
 
 // TODO: remove difference col in CLAIMS IN LAST AND CURRENT OS
-
-
-
-
-
-
-
-
-
-
 
 /*  Insurance Classes 
 

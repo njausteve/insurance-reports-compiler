@@ -5,11 +5,14 @@ const _ = require("lodash");
 const del = require("del");
 const objectRenameKeys = require("object-rename-keys");
 
-//console.log(XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[0]]))
 let sheet1 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[0]]);
 let sheet2 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[1]]);
 let sheet3 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[2]]);
 let sheet4 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[3]]);
+
+let sheets = [sheet1, sheet2, sheet3, sheet4];
+
+console.log("sheet Data", sheets.length);
 
 let osBeginKeyChangesMap = {
   CLASS: "insuranceClass",
@@ -17,7 +20,6 @@ let osBeginKeyChangesMap = {
   "CLAIM NO": "claimNo",
   "INSURED NAME": "insuredName",
   "DATE REPORTED": "dateReported",
-  "D.O.L": "dateOfLoss",
   "DATE OF LOSS": "dateOfLoss",
   "PERIOD FROM": "periodFrom",
   "PERIOD TO": "periodTo",
@@ -30,7 +32,6 @@ let osEndMonthKeyChangesMap = {
   "CLAIM NO": "claimNo",
   "INSURED NAME": "insuredName",
   "DATE REPORTED": "dateReported",
-  "D.O.L": "dateOfLoss",
   "DATE OF LOSS": "dateOfLoss",
   "PERIOD FROM": "periodFrom",
   "PERIOD TO": "periodTo",
@@ -80,11 +81,54 @@ let printToExcelKeysmap = {
   difference: "DIFFERENCE"
 };
 
+// check sheet Fields
+
+function checkSheetFields() {
+  let status = [];
+
+  if (sheets.length < 4) {
+    status = { sheet: "no sheets", error: "one or more sheets are missing" };
+  } else {
+    let sheetName = "";
+
+    sheets.map(function(sheet, index) {
+      let theIndex = index + 1;
+      let keysMap;
+
+      if (theIndex == 1) {
+        sheetName = "Begining OS estimate";
+        keysMap = osBeginKeyChangesMap;
+      } else if (theIndex == 2) {
+        sheetName = "Intimated claims";
+        keysMap = intimatedKeyChangesMap;
+      } else if (theIndex == 3) {
+        sheetName = "Paid claims";
+        keysMap = paymentKeyChangesMap;
+      } else {
+        sheetName = "End month OS estimate";
+        keysMap = osEndMonthKeyChangesMap;
+      }
+
+      for (const prop in sheet[0]) {
+        if (!keysMap.hasOwnProperty(prop)) {
+          status.push({
+            sheet: sheetName,
+            error: `column name is mispelled or missing *${prop}*`
+          });
+        }
+      }
+    });
+  }
+
+  return status;
+}
+
+checkSheetFields();
+
 let osBeginMonth = objectRenameKeys(sheet1, osBeginKeyChangesMap);
-let osEndMonth = objectRenameKeys(sheet2, osEndMonthKeyChangesMap);
-let intimated = objectRenameKeys(sheet3, intimatedKeyChangesMap);
-let payment = objectRenameKeys(sheet4, paymentKeyChangesMap);
-// //let intimated = objectRenameKeys(sheet3, osKeyChangesMap);
+let intimated = objectRenameKeys(sheet2, intimatedKeyChangesMap);
+let payment = objectRenameKeys(sheet3, paymentKeyChangesMap);
+let osEndMonth = objectRenameKeys(sheet4, osEndMonthKeyChangesMap);
 
 let combinedOsWithDuplicates = _.concat(osEndMonth, osBeginMonth, "claimNo");
 
@@ -102,10 +146,10 @@ let removedOsBeginToEndMonth = _.differenceBy(
   "claimNo"
 );
 
+// sheet with those that appear ib begining and End OS estimate
 let osNoChange = _.intersectionBy(osBeginMonth, osEndMonth, "claimNo");
 
-// console.log( "unionby ---> : " + combinedOs.length + "\n concat -----> :", combined.length + "\n added ----> : " + addedOsEndFromBeginMonth.length + "\n removed ---> : " + removedOsBeginToEndMonth.length + "\n no change---> : " + osNoChange.length );
-
+// sheet with those that appear ib begining and End OS estimate : repeated
 let osRepeatedClaimNo = osNoChange.map(function(claim) {
   let newObj = {};
 
@@ -374,24 +418,26 @@ let intimatedPaidSummary = getSummary(intimatedPaidMovement, "difference");
 
 // combined sheet OS begining and end no dubplictes:
 
-let combinedSheets12 = _.concat(
-  addedOsEndFromBeginMonth,
-  removedOsBeginToEndMonth,
-  osRepeatedClaimNo,
-  "claimNO"
-).map(function(claim) {
-  let newObj = {};
-  for (const prop in claim) {
-    newObj[prop] = claim[prop];
-    if (claim.osEndMonthEstimate == null) {
-      newObj.osEndMonthEstimate = 0;
-    } else if (claim.osBeginEstimate == null) {
-      newObj.osBeginEstimate = 0;
+let combinedSheets12 = _
+  .concat(
+    addedOsEndFromBeginMonth,
+    removedOsBeginToEndMonth,
+    osRepeatedClaimNo,
+    "claimNO"
+  )
+  .map(function(claim) {
+    let newObj = {};
+    for (const prop in claim) {
+      newObj[prop] = claim[prop];
+      if (claim.osEndMonthEstimate == null) {
+        newObj.osEndMonthEstimate = 0;
+      } else if (claim.osBeginEstimate == null) {
+        newObj.osBeginEstimate = 0;
+      }
     }
-  }
 
-  return newObj;
-});
+    return newObj;
+  });
 
 // find values that are revived : present in Added but not intimated for this month
 

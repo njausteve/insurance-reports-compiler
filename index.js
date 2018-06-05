@@ -666,10 +666,17 @@ XLSX.writeFile(wb, "./tmp/Unstyled Report.xlsx");
 
 XlsxPopulate.fromFileAsync("./tmp/Unstyled Report.xlsx")
   .then(function(otherWorkBook) {
+    
     const sheets = otherWorkBook.sheets();
+    sheets.map(function(sheet){
+    
+      sheet.row(1).style({ bold: true, fill: "ffff00", fontSize: 14 });
 
-    return otherWorkBook.toFileAsync("./Final Report.xlsx.xlsx");
-    // ...
+    });
+
+
+    return otherWorkBook.toFileAsync("./Final Report.xlsx");
+   
   })
   .catch(err => console.error(err));
 

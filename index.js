@@ -12,7 +12,7 @@ let sheet4 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[3]]);
 
 let sheets = [sheet1, sheet2, sheet3, sheet4];
 
-console.log("sheet Data", sheets.length);
+
 
 let osBeginKeyChangesMap = {
   CLASS: "insuranceClass",
@@ -87,10 +87,9 @@ function checkSheetFields() {
   let status = [];
 
   if (sheets.length < 4) {
-    status = { sheet: "no sheets", error: "one or more sheets are missing" };
+    status.push({ sheet: "no sheets", error: "one or more sheets are missing" });
   } else {
     let sheetName = "";
-
     sheets.map(function(sheet, index) {
       let theIndex = index + 1;
       let keysMap;
@@ -120,10 +119,14 @@ function checkSheetFields() {
     });
   }
 
+   if(status.length < 1){
+      status.push({sheet: "all", message: "all sheets OKAY"});   
+   }
+
   return status;
 }
 
-checkSheetFields();
+console.log(checkSheetFields());
 
 let osBeginMonth = objectRenameKeys(sheet1, osBeginKeyChangesMap);
 let intimated = objectRenameKeys(sheet2, intimatedKeyChangesMap);

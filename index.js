@@ -12,8 +12,6 @@ let sheet4 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[3]]);
 
 let sheets = [sheet1, sheet2, sheet3, sheet4];
 
-
-
 let osBeginKeyChangesMap = {
   CLASS: "insuranceClass",
   "POLICY NO": "policyNo",
@@ -87,7 +85,10 @@ function checkSheetFields() {
   let status = [];
 
   if (sheets.length < 4) {
-    status.push({ sheet: "no sheets", error: "one or more sheets are missing" });
+    status.push({
+      sheet: "no sheets",
+      error: "one or more sheets are missing"
+    });
   } else {
     let sheetName = "";
     sheets.map(function(sheet, index) {
@@ -119,9 +120,9 @@ function checkSheetFields() {
     });
   }
 
-   if(status.length < 1){
-      status.push({sheet: "all", message: "all sheets OKAY"});   
-   }
+  if (status.length < 1) {
+    status.push({ sheet: "all", message: "all sheets OKAY" });
+  }
 
   return status;
 }
@@ -152,7 +153,7 @@ let removedOsBeginToEndMonth = _.differenceBy(
 // sheet with those that appear ib begining and End OS estimate
 let osNoChange = _.intersectionBy(osBeginMonth, osEndMonth, "claimNo");
 
-// sheet with those that appear ib begining and End OS estimate : repeated
+// sheet with those that appear in begining and End OS estimate : repeated
 let osRepeatedClaimNo = osNoChange.map(function(claim) {
   let newObj = {};
 
@@ -591,6 +592,52 @@ let wsRevivedClaimSummary = XLSX.utils.json_to_sheet(
   summaryHeader
 );
 
+let wsheets = [
+  wsMovementSummary,
+  wsClosedAsNoClaimSummary,
+  wsRevivedClaimSummary,
+  wsRemovedOs,
+  wsAddedOs,
+  wsCombinedOs,
+  wsRevivedOs,
+  wsClosedASNoClaim,
+  wsInBeginingEnd,
+  wsUpMovement,
+  wsDownMovement
+];
+
+// formating of column widths
+
+wsheets.map(function(sheet, index) {
+  if (index < 3) {
+    sheet["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 20 }];
+  } else {
+    sheet["!cols"] = [
+      { wch: 40 },
+      { wch: 30 },
+      { wch: 30 },
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 }
+    ];
+  }
+
+  sheet["!margins"] = {
+    left: 0.7,
+    right: 0.7,
+    top: 0.75,
+    bottom: 0.75,
+    header: 0.3,
+    footer: 0.3
+  };
+});
+
 wb.Sheets["ALL COMBINED SORTED"] = wsCombinedOs;
 wb.Sheets["ADDED CLAIMS"] = wsAddedOs;
 wb.Sheets["REMOVED CLAIMS"] = wsRemovedOs;
@@ -602,6 +649,8 @@ wb.Sheets["REVIVED CLAIMS"] = wsRevivedOs;
 wb.Sheets["MOVEMENT SUMMARY"] = wsMovementSummary;
 wb.Sheets["CLOSED AS NO CLAIM SUMMARY"] = wsClosedAsNoClaimSummary;
 wb.Sheets["REVIVED CLAIMS SUMMARY"] = wsRevivedClaimSummary;
+
+console.log(wb.Sheets["CLOSED AS NO CLAIM SUMMARY"]);
 
 XLSX.write(wb, { bookType: "xlsx", type: "binary" });
 

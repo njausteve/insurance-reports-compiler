@@ -1,5 +1,6 @@
 const XLSX = require("xlsx");
-let workbook = XLSX.readFile("./source file/insurance.xlsx");
+const workbook = XLSX.readFile("./source file/insurance.xlsx");
+const XlsxPopulate = require("xlsx-populate");
 let sheetNameList = workbook.SheetNames;
 const _ = require("lodash");
 const del = require("del");
@@ -228,6 +229,8 @@ let movementDown = osRepeatedClaimNo
 let movementUpDown = _.concat(movementUp, movementDown);
 
 function calculatePerclass(targetArray, valueUsedToCalculate) {
+  //console.log("targetArray", targetArray);
+
   let ValuesPerClass = {};
   let motorPrivate = [];
   let motorPsvHire = [];
@@ -611,6 +614,11 @@ let wsheets = [
 wsheets.map(function(sheet, index) {
   if (index < 3) {
     sheet["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 20 }];
+    sheet.A1.s = {
+      patternType: "solid",
+      fgColor: { theme: 8, tint: 0.3999755851924192 },
+      bgColor: { indexed: 64 }
+    };
   } else {
     sheet["!cols"] = [
       { wch: 40 },
@@ -650,18 +658,27 @@ wb.Sheets["MOVEMENT SUMMARY"] = wsMovementSummary;
 wb.Sheets["CLOSED AS NO CLAIM SUMMARY"] = wsClosedAsNoClaimSummary;
 wb.Sheets["REVIVED CLAIMS SUMMARY"] = wsRevivedClaimSummary;
 
-console.log(wb.Sheets["CLOSED AS NO CLAIM SUMMARY"]);
-
 XLSX.write(wb, { bookType: "xlsx", type: "binary" });
 
-del.sync(["*.xlsx"]);
-XLSX.writeFile(wb, "Final Report.xlsx");
+del.sync(["./tmp/*.xlsx", "*.xlsx"]);
+
+XLSX.writeFile(wb, "./tmp/Unstyled Report.xlsx");
+
+XlsxPopulate.fromFileAsync("./tmp/Unstyled Report.xlsx")
+  .then(function(otherWorkBook) {
+    const sheets = otherWorkBook.sheets();
+
+    return otherWorkBook.toFileAsync("./Final Report.xlsx.xlsx");
+    // ...
+  })
+  .catch(err => console.error(err));
 
 // TODO: separate code into modules.
 
 //TODO: change formating of values to end sheets
 
 // TODO: remove difference col in CLAIMS IN LAST AND CURRENT OS
+//TODO: remove empty  row on sheets
 
 /*  Insurance Classes 
 

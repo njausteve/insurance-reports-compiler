@@ -44,7 +44,7 @@ let intimatedKeyChangesMap = {
   "POLICY NO": "policyNo",
   "CLAIM NO": "claimNo",
   "INTIMATION RESERVE": "intimationReserve",
-  "DATE OF LOSS":"dateOfLoss",
+  "DATE OF LOSS": "dateOfLoss",
   "DATE REPORTED": "dateReported"
 };
 
@@ -55,7 +55,7 @@ let paymentKeyChangesMap = {
   "CLAIM NO": "claimNo",
   "POLICY HOLDER": "policyHolder",
   "UW YEAR": "uwYear",
-    PAYEE: "payee",
+  PAYEE: "payee",
   "PAID AMOUNT": "paidAmount"
 };
 
@@ -81,7 +81,6 @@ let printToExcelKeysmap = {
   paidAmount: "PAID AMOUNT",
   difference: "DIFFERENCE"
 };
-
 
 // check sheet Fields
 
@@ -133,18 +132,12 @@ function checkSheetFields() {
 
 console.log(checkSheetFields());
 
-
-
 // assignment
 
 let osBeginMonth = objectRenameKeys(sheet1, osBeginKeyChangesMap);
 let intimatedWithZeros = objectRenameKeys(sheet2, intimatedKeyChangesMap);
 let paymentWithDuplicate = objectRenameKeys(sheet3, paymentKeyChangesMap);
 let osEndMonth = objectRenameKeys(sheet4, osEndMonthKeyChangesMap);
-
-
-
-
 
 // convert all keys to original
 function toExcelSheet(sheetToprint) {
@@ -183,10 +176,7 @@ function movementTotal(movementArray) {
   }, 0);
 }
 
-
-
 let combinedOsWithDuplicates = _.concat(osEndMonth, osBeginMonth, "claimNo");
-
 
 // [Removed OS] : to find those in the osEndMonth but not in the osBeginMonth
 let addedOsEndFromBeginMonth = _.differenceBy(
@@ -220,48 +210,40 @@ let osRepeatedClaimNo = osNoChange.map(function(claim) {
   return newObj;
 });
 
-
-
 // payments adjustments
 
-let uniquePaidClaimNo = _.uniqBy(paymentWithDuplicate, 'claimNo').map(claim=> claim.claimNo);
+let uniquePaidClaimNo = _
+  .uniqBy(paymentWithDuplicate, "claimNo")
+  .map(claim => claim.claimNo);
 
+let payments = uniquePaidClaimNo
+  .map(function(claimNo) {
+    let totalPaid = 0;
+    let newObj = {};
 
-let payments = uniquePaidClaimNo.map(function(claimNo){
+    paymentWithDuplicate.map(function(dupClaim) {
+      for (const prop in dupClaim) {
+        if (claimNo === dupClaim.claimNo) {
+          if (prop === "paidAmount") {
+            totalPaid = totalPaid + toFloat(dupClaim.paidAmount);
 
-  let totalPaid = 0;
-  let newObj = {};
-
-
-  paymentWithDuplicate.map(function(dupClaim){
-       
-      for(const prop in dupClaim){
-
-         if(claimNo === dupClaim.claimNo ){
-          
-                if(prop === 'paidAmount' ){
-
-                  totalPaid = totalPaid + toFloat(dupClaim.paidAmount);
-
-                  newObj.paidAmount = totalPaid;
-
-                }else{
-                  newObj[prop] = dupClaim[prop]; 
-                }
-         }
+            newObj.paidAmount = totalPaid;
+          } else {
+            newObj[prop] = dupClaim[prop];
+          }
+        }
       }
-  });
-     
-  return newObj;
+    });
 
-}).filter( claim => claim.paidAmount != 0 );
-
+    return newObj;
+  })
+  .filter(claim => claim.paidAmount != 0);
 
 // remove zero values claims from intimated
 
-let intimated = intimatedWithZeros.filter(claim => claim.intimationReserve != 0 );
-
-
+let intimated = intimatedWithZeros.filter(
+  claim => claim.intimationReserve != 0
+);
 
 //  sheet with upward movement + differences
 let movementUp = osRepeatedClaimNo
@@ -305,56 +287,97 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
   let count = {};
 
   targetArray.map(function(claim) {
-
-    if(claim.policyNo){
-    claimPrefixShort = claim.policyNo.slice(0, 6);
-    claimPrefixLong = claim.policyNo.slice(0, 10);
+    if (claim.policyNo) {
+      claimPrefixShort = claim.policyNo.slice(0, 6);
+      claimPrefixLong = claim.policyNo.slice(0, 10);
     }
 
     insClass = claim.insuranceClass.trim().toString();
 
-  
     valueToPush = toFloat(claim[valueUsedToCalculate]);
 
-    if (insClass === 'MOTOR CYCLE' || insClass === 'MOTOR PRIVATE' || insClass === 'MOTOR PRIVATE ENHANCED' ) {
+    if (
+      insClass === "MOTOR CYCLE" ||
+      insClass === "MOTOR PRIVATE" ||
+      insClass === "MOTOR PRIVATE ENHANCED"
+    ) {
       motorPrivate.push(valueToPush);
 
       // motor private
-    } else if (insClass === 'MOTOR (PSV) PRIVATE HIRE'  ) {
+    } else if (insClass === "MOTOR (PSV) PRIVATE HIRE") {
       // MOTOR PSV HIRE
       motorPsvHire.push(valueToPush);
-    } else if ( insClass === 'BONDS ( I A TA) FINANCIAL GUARA'||  insClass === 'GOLFERS/SPORTSMAN INSURANCE') {
+    } else if (
+      insClass === "BONDS ( I A TA) FINANCIAL GUARA" ||
+      insClass === "GOLFERS/SPORTSMAN INSURANCE"
+    ) {
       // MISCELLANEOUS
-        
+
       miscellaneous.push(valueToPush);
-    } else if (insClass === 'FIRE DOMESTIC (HOC)') {
+    } else if (insClass === "FIRE DOMESTIC (HOC)") {
       // FIRE DOMESTIC
 
       fireDomestic.push(valueToPush);
-    } else if ( insClass === 'GOODS IN TRANSIT'||  insClass === 'MARINE CARGO' ||  insClass === 'MARINE OPEN COVER') {
+    } else if (
+      insClass === "GOODS IN TRANSIT" ||
+      insClass === "MARINE CARGO" ||
+      insClass === "MARINE OPEN COVER"
+    ) {
       // MARINE
 
       marine.push(valueToPush);
-    } else if (  insClass === 'INDUSTRIAL ALL RISKS'||  insClass === 'FIRE INDUSTRIAL') {
+    } else if (
+      insClass === "INDUSTRIAL ALL RISKS" ||
+      insClass === "FIRE INDUSTRIAL"
+    ) {
       fireIndustrial.push(valueToPush);
       // FIRE INDUSTRIAL
-    } else if (insClass === 'CARRIERS LIABILITY POLICY'||  insClass === 'CONTRACTUAL LIABILITY POLICY'||  insClass === 'PORT LIABILITY POLICY'||  insClass === 'PUBLIC LIABILITY'||  insClass === 'WAREHOUSE LIABILITY POLICY') {
+    } else if (
+      insClass === "CARRIERS LIABILITY POLICY" ||
+      insClass === "CONTRACTUAL LIABILITY POLICY" ||
+      insClass === "PORT LIABILITY POLICY" ||
+      insClass === "PUBLIC LIABILITY" ||
+      insClass === "WAREHOUSE LIABILITY POLICY"
+    ) {
       liabilities.push(valueToPush);
       // LIABILITIES
-    } else if (insClass === 'MOTOR COMMERCIAL'||  insClass === 'MOTOR GENERAL CARTAGE'||  insClass === 'MOTOR TRACTORS'||  insClass === 'MOTOR TRADE') {
+    } else if (
+      insClass === "MOTOR COMMERCIAL" ||
+      insClass === "MOTOR GENERAL CARTAGE" ||
+      insClass === "MOTOR TRACTORS" ||
+      insClass === "MOTOR TRADE"
+    ) {
       // MOTOR COMMERCIAL
       motorCommercial.push(valueToPush);
-    } else if (insClass === 'CONTRACTORS ALL RISKS'||  insClass === 'ELECTRONIC EQUIPMENT'||  insClass === 'ERECTION ALL RISKS'||  insClass === 'L.O.P. FOLLOWING MACHINERY B/DOWN'||  insClass === 'MACHINERY BREAKDOWN') {
+    } else if (
+      insClass === "CONTRACTORS ALL RISKS" ||
+      insClass === "ELECTRONIC EQUIPMENT" ||
+      insClass === "ERECTION ALL RISKS" ||
+      insClass === "L.O.P. FOLLOWING MACHINERY B/DOWN" ||
+      insClass === "MACHINERY BREAKDOWN"
+    ) {
       // ENGINEERING
       engineering.push(valueToPush);
-    } else if (insClass === 'ALL RISKS'||  insClass === 'BANKERS BLANKET INSURANCE'||  insClass === 'BURGLARY'||  insClass === 'CASH IN TRANSIT'||  insClass === 'FIDELITY GUARANTEE') {
+    } else if (
+      insClass === "ALL RISKS" ||
+      insClass === "BANKERS BLANKET INSURANCE" ||
+      insClass === "BURGLARY" ||
+      insClass === "CASH IN TRANSIT" ||
+      insClass === "FIDELITY GUARANTEE"
+    ) {
       // THEFT
       theft.push(valueToPush);
-    } else if ( insClass === 'WORKERS INJURY BENEFIT ACT'||  insClass === "WORKMEN'S COMP (COMMON LAW) COVER"||  insClass === "WORKMEN'S COMPENSATION (ACT) CO") {
+    } else if (
+      insClass === "WORKERS INJURY BENEFIT ACT" ||
+      insClass === "WORKMEN'S COMP (COMMON LAW) COVER" ||
+      insClass === "WORKMEN'S COMPENSATION (ACT) CO"
+    ) {
       // WIBA
       wiba.push(valueToPush);
     } else if (
-     insClass === 'ACCIDENT HOSPITALISATION INS. P'||  insClass === 'HEALTH/MEDICAL EXPENSES INSURANCE'||  insClass === 'INDIVIDUAL MEDICAL INSURANCE'
+      insClass === "ACCIDENT HOSPITALISATION INS. P" ||
+      insClass === "HEALTH/MEDICAL EXPENSES INSURANCE" ||
+      insClass === "INDIVIDUAL MEDICAL INSURANCE"
     ) {
       // medical
       medical.push(valueToPush);
@@ -423,9 +446,6 @@ function getMovementSummary() {
   return movementSummary;
 }
 
-
-
-
 // get summary for any sheet
 function getSummary(targetSheet, valueToRefer) {
   let summary = [];
@@ -466,29 +486,28 @@ let intimatedAndPaidIncomplete = _.intersectionBy(
 
 let intimatedPaidMovementwithDuplicates = _.concat(intimated, payments);
 
-let intimatedPaidMovement = intimatedAndPaidIncomplete.map(function(claim) {
-  let newObj = {};
+let intimatedPaidMovement = intimatedAndPaidIncomplete
+  .map(function(claim) {
+    let newObj = {};
 
-  intimatedPaidMovementwithDuplicates.map(function(combineClaim) {
-    if (combineClaim.claimNo === claim.claimNo) {
-      for (const prop in combineClaim) {
-        newObj[prop] = combineClaim[prop];
+    intimatedPaidMovementwithDuplicates.map(function(combineClaim) {
+      if (combineClaim.claimNo === claim.claimNo) {
+        for (const prop in combineClaim) {
+          newObj[prop] = combineClaim[prop];
 
-        if (newObj.paidAmount != undefined) {
-          newObj.difference =
-            toFloat(newObj.paidAmount) - toFloat(newObj.intimationReserve);
+          if (newObj.paidAmount != undefined) {
+            newObj.difference =
+              toFloat(newObj.paidAmount) - toFloat(newObj.intimationReserve);
+          }
         }
       }
-    }
-  });
+    });
 
-  return newObj;
-}).filter( claim => claim.difference != 0 );
-
+    return newObj;
+  })
+  .filter(claim => claim.difference != 0);
 
 let intimatedPaidSummary = getSummary(intimatedPaidMovement, "difference");
-
-
 
 // claims in intimated and EndOs Estimates without Endestimate amount data
 let intimatedEndOsIncomplete = _.intersectionBy(
@@ -500,68 +519,62 @@ let intimatedEndOsIncomplete = _.intersectionBy(
 // intimated and End Os all {duplicates}
 let intimatedEndOsMovementDuplicates = _.concat(intimated, osEndMonth);
 
-
 // sheet with intimated - EndOS movement
 
-let intimatedEndOsMovement = intimatedEndOsIncomplete.map(function(claim) {
-  let newObj = {};
-  intimatedEndOsMovementDuplicates.map(function(combineClaim) {
-    if (combineClaim.claimNo === claim.claimNo ) {
-      for (const prop in combineClaim) {
-        newObj[prop] = combineClaim[prop];
-        if (newObj.osEndMonthEstimate != undefined) {
-          newObj.difference =
-            toFloat(newObj.osEndMonthEstimate) - toFloat(newObj.intimationReserve);
+let intimatedEndOsMovement = intimatedEndOsIncomplete
+  .map(function(claim) {
+    let newObj = {};
+    intimatedEndOsMovementDuplicates.map(function(combineClaim) {
+      if (combineClaim.claimNo === claim.claimNo) {
+        for (const prop in combineClaim) {
+          newObj[prop] = combineClaim[prop];
+          if (newObj.osEndMonthEstimate != undefined) {
+            newObj.difference =
+              toFloat(newObj.osEndMonthEstimate) -
+              toFloat(newObj.intimationReserve);
+          }
         }
       }
-    }
-  });
+    });
 
-  return newObj;
-}).filter( claim => claim.difference != 0 );
-
+    return newObj;
+  })
+  .filter(claim => claim.difference != 0);
 
 // summary for intimatedEndOsMovement
 
-
-let intimatedEndOsMovementSummary = getSummary(intimatedEndOsMovement, "difference");
-
-
+let intimatedEndOsMovementSummary = getSummary(
+  intimatedEndOsMovement,
+  "difference"
+);
 
 // claims in Begining OS estimates and paid (payments) without paid amount data
-let beginPaidIncomplete = _.intersectionBy(
-  osBeginMonth,
-  payments,
-  "claimNo"
-);
+let beginPaidIncomplete = _.intersectionBy(osBeginMonth, payments, "claimNo");
 
 // Begining OS estimates and paid (payments) all {duplicates}
 let beginPaidMovementDuplicates = _.concat(osBeginMonth, payments);
 
-
 // sheet with Begining OS estimates and paid (payments) movements
-let beginPaidMovement = beginPaidIncomplete.map(function(claim) {
+let beginPaidMovement = beginPaidIncomplete
+  .map(function(claim) {
+    let newObj = {};
 
-  let newObj = {};
-  
-  beginPaidMovementDuplicates.map(function(combineClaim) {
-    if (combineClaim.claimNo === claim.claimNo ) {
-      for (const prop in combineClaim) {
+    beginPaidMovementDuplicates.map(function(combineClaim) {
+      if (combineClaim.claimNo === claim.claimNo) {
+        for (const prop in combineClaim) {
+          newObj[prop] = combineClaim[prop];
 
-        newObj[prop] = combineClaim[prop];
-
-        if (newObj.paidAmount != undefined) {
-          newObj.difference =
-            toFloat(newObj.paidAmount) - toFloat(newObj.osBeginEstimate);
+          if (newObj.paidAmount != undefined) {
+            newObj.difference =
+              toFloat(newObj.paidAmount) - toFloat(newObj.osBeginEstimate);
+          }
         }
       }
-    }
-  });
+    });
 
-  return newObj;
-}).filter( claim => claim.difference != 0 );
-
-
+    return newObj;
+  })
+  .filter(claim => claim.difference != 0);
 
 // combined sheet OS begining and end no dubplictes:
 
@@ -587,9 +600,6 @@ let beginPaidMovement = beginPaidIncomplete.map(function(claim) {
 //   });
 
 let combined12 = _.concat(osBeginMonth, intimated);
-
-
-
 
 // find values that are revived : present in Added but not intimated for this month
 
@@ -618,9 +628,6 @@ let paidSummary = getSummary(payments, "paidAmount");
 
 let intimatedSummary = getSummary(intimated, "intimationReserve");
 
-
-console.log("intimatedSummary", intimatedSummary);
-
 let totalMovementSummary = movementSummary.map(function(moveClass) {
   let newObj = {};
 
@@ -646,6 +653,8 @@ let wb = XLSX.utils.book_new();
 
 // create sheetsNames
 wb.SheetNames.push(
+  "PAID SUMMARY",
+  "INTIMATED SUMMARY",
   "MOVEMENT SUMMARY",
   "CLOSED AS NO CLAIM SUMMARY",
   "REVIVED CLAIMS SUMMARY",
@@ -710,11 +719,17 @@ let revivedHeader = {
   ]
 };
 
-let wsIntimatedEndOSmovement = XLSX.utils.json_to_sheet(toExcelSheet(intimatedEndOsMovement));
+let wsIntimatedEndOSmovement = XLSX.utils.json_to_sheet(
+  toExcelSheet(intimatedEndOsMovement)
+);
 
-let wsIntimatedPaidMovement = XLSX.utils.json_to_sheet(toExcelSheet(intimatedPaidMovement));
+let wsIntimatedPaidMovement = XLSX.utils.json_to_sheet(
+  toExcelSheet(intimatedPaidMovement)
+);
 
-let wsbeginPaidMovement = XLSX.utils.json_to_sheet(toExcelSheet(beginPaidMovement));
+let wsbeginPaidMovement = XLSX.utils.json_to_sheet(
+  toExcelSheet(beginPaidMovement)
+);
 
 let wsRemovedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(removedOsBeginToEndMonth)
@@ -722,9 +737,7 @@ let wsRemovedOs = XLSX.utils.json_to_sheet(
 let wsAddedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(addedOsEndFromBeginMonth)
 );
-let wsCombinedOs = XLSX.utils.json_to_sheet(
-  toExcelSheet(beginPaidIncomplete)
-);
+let wsCombinedOs = XLSX.utils.json_to_sheet(toExcelSheet(beginPaidIncomplete));
 let wsRevivedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(revivedClaims),
   revivedHeader
@@ -756,10 +769,19 @@ let wsRevivedClaimSummary = XLSX.utils.json_to_sheet(
   summaryHeader
 );
 
+let wsPaidSummary = XLSX.utils.json_to_sheet(paidSummary, summaryHeader);
+
+let wsIntimatedSummary = XLSX.utils.json_to_sheet(
+  intimatedSummary,
+  summaryHeader
+);
+
 let wsheets = [
   wsMovementSummary,
   wsClosedAsNoClaimSummary,
   wsRevivedClaimSummary,
+  wsPaidSummary,
+  wsIntimatedSummary,
   wsRemovedOs,
   wsAddedOs,
   wsCombinedOs,
@@ -773,7 +795,7 @@ let wsheets = [
 // formating of column widths
 
 wsheets.map(function(sheet, index) {
-  if (index < 3) {
+  if (index < 6) {
     sheet["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 20 }];
     sheet.A1.s = {
       patternType: "solid",
@@ -807,6 +829,11 @@ wsheets.map(function(sheet, index) {
   };
 });
 
+wb.Sheets["PAID SUMMARY"] = wsPaidSummary;
+wb.Sheets["INTIMATED SUMMARY"] = wsIntimatedSummary;
+wb.Sheets["MOVEMENT SUMMARY"] = wsMovementSummary;
+wb.Sheets["CLOSED AS NO CLAIM SUMMARY"] = wsClosedAsNoClaimSummary;
+wb.Sheets["REVIVED CLAIMS SUMMARY"] = wsRevivedClaimSummary;
 wb.Sheets["ALL COMBINED SORTED"] = wsCombinedOs;
 wb.Sheets["ADDED CLAIMS"] = wsAddedOs;
 wb.Sheets["REMOVED CLAIMS"] = wsRemovedOs;
@@ -818,9 +845,6 @@ wb.Sheets["INT-OS END MOVEMENT"] = wsIntimatedEndOSmovement;
 wb.Sheets["INT-PAID MOVEMENT"] = wsIntimatedPaidMovement;
 wb.Sheets["OS BEGIN-PAID MOVEMENT"] = wsbeginPaidMovement;
 wb.Sheets["REVIVED CLAIMS"] = wsRevivedOs;
-wb.Sheets["MOVEMENT SUMMARY"] = wsMovementSummary;
-wb.Sheets["CLOSED AS NO CLAIM SUMMARY"] = wsClosedAsNoClaimSummary;
-wb.Sheets["REVIVED CLAIMS SUMMARY"] = wsRevivedClaimSummary;
 
 XLSX.write(wb, { bookType: "xlsx", type: "binary" });
 
@@ -876,7 +900,5 @@ WIBA - WORKERS INJURUY BENEFIT ACT, WORKMEN'S COMP (COMMON LAW) COVER, WORKMEN'S
 THEFT - ALL RISKS, BANKERS BLANKET INSURANCE, BUGRLARY, CASH IN TRANSIT, FIDELITY GUARANTEE - MGL/10/
 
 */
-
-
 
 // console.log("paid summary", calculatePerclass(payment, "paidAmount"));

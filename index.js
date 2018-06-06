@@ -43,7 +43,9 @@ let intimatedKeyChangesMap = {
   AGENCY: "Agency",
   "POLICY NO": "policyNo",
   "CLAIM NO": "claimNo",
-  "INTIMATION RESERVE": "intimationReserve"
+  "INTIMATION RESERVE": "intimationReserve",
+  "DATE OF LOSS":"dateOfLoss",
+  "DATE REPORTED": "dateReported"
 };
 
 let paymentKeyChangesMap = {
@@ -419,32 +421,110 @@ let intimatedPaidMovement = intimatedAndPaidIncomplete.map(function(claim) {
   });
 
   return newObj;
-});
+}).filter( claim => claim.difference != 0 );
+
 
 let intimatedPaidSummary = getSummary(intimatedPaidMovement, "difference");
 
-// combined sheet OS begining and end no dubplictes:
 
-let combinedSheets12 = _
-  .concat(
-    addedOsEndFromBeginMonth,
-    removedOsBeginToEndMonth,
-    osRepeatedClaimNo,
-    "claimNO"
-  )
-  .map(function(claim) {
-    let newObj = {};
-    for (const prop in claim) {
-      newObj[prop] = claim[prop];
-      if (claim.osEndMonthEstimate == null) {
-        newObj.osEndMonthEstimate = 0;
-      } else if (claim.osBeginEstimate == null) {
-        newObj.osBeginEstimate = 0;
+
+
+// claims in intimated and EndOs Estimates without Endestimate amount data
+let intimatedEndOsIncomplete = _.intersectionBy(
+  intimated,
+  osEndMonth,
+  "claimNo"
+);
+
+// intimated and End Os all {duplicates}
+let intimatedEndOsMovementDuplicates = _.concat(intimated, osEndMonth);
+
+
+// sheet with intimated - EndOS movement
+
+let intimatedEndOsMovement = intimatedEndOsIncomplete.map(function(claim) {
+  let newObj = {};
+  intimatedEndOsMovementDuplicates.map(function(combineClaim) {
+    if (combineClaim.claimNo === claim.claimNo ) {
+      for (const prop in combineClaim) {
+        newObj[prop] = combineClaim[prop];
+        if (newObj.osEndMonthEstimate != undefined) {
+          newObj.difference =
+            toFloat(newObj.osEndMonthEstimate) - toFloat(newObj.intimationReserve);
+        }
       }
     }
-
-    return newObj;
   });
+
+  return newObj;
+}).filter( claim => claim.difference != 0 );
+
+
+
+// claims in Begining OS estimates and paid (payments) without paid amount data
+let beginPaidIncomplete = _.intersectionBy(
+  osBeginMonth,
+  payment,
+  "claimNo"
+);
+
+// Begining OS estimates and paid (payments) all {duplicates}
+let beginPaidMovementDuplicates = _.concat(osBeginMonth, payment);
+
+
+// sheet with Begining OS estimates and paid (payments) movements
+let beginPaidMovement = beginPaidIncomplete.map(function(claim) {
+
+  let newObj = {};
+  beginPaidMovementDuplicates.map(function(combineClaim) {
+    if (combineClaim.claimNo === claim.claimNo ) {
+      for (const prop in combineClaim) {
+        newObj[prop] = combineClaim[prop];
+        if (newObj.paidAmount != undefined) {
+          newObj.difference =
+            toFloat(newObj.paidAmount) - toFloat(newObj.osBeginEstimate);
+        }
+      }
+    }
+  });
+
+  return newObj;
+}).filter( claim => claim.difference != 0 );
+
+
+
+// 
+
+// console.log("osEndMonthEstimate -------> ", intimatedEndOsMovement);
+
+
+// combined sheet OS begining and end no dubplictes:
+
+// let combinedSheets = _
+//   .concat(
+//     addedOsEndFromBeginMonth,
+//     removedOsBeginToEndMonth,
+//     osRepeatedClaimNo,
+//     "claimNO"
+//   )
+//   .map(function(claim) {
+//     let newObj = {};
+//     for (const prop in claim) {
+//       newObj[prop] = claim[prop];
+//       if (claim.osEndMonthEstimate == null) {
+//         newObj.osEndMonthEstimate = 0;
+//       } else if (claim.osBeginEstimate == null) {
+//         newObj.osBeginEstimate = 0;
+//       }
+//     }
+
+//     return newObj;
+//   });
+
+let combined12 = _.concat(osBeginMonth, intimated);
+
+
+
 
 // find values that are revived : present in Added but not intimated for this month
 
@@ -504,6 +584,9 @@ wb.SheetNames.push(
   "CLAIMS IN LAST AND CURRENT OS",
   "MOVED UP CLAIMS",
   "MOVED DOWN CLAIMS",
+  "INT-OS END MOVEMENT",
+  "INT-PAID MOVEMENT",
+  "OS BEGIN-PAID MOVEMENT",
   "ALL COMBINED SORTED"
 );
 
@@ -555,6 +638,12 @@ let revivedHeader = {
   ]
 };
 
+let wsIntimatedEndOSmovement = XLSX.utils.json_to_sheet(toExcelSheet(intimatedEndOsMovement));
+
+let wsIntimatedPaidMovement = XLSX.utils.json_to_sheet(toExcelSheet(intimatedPaidMovement));
+
+let wsbeginPaidMovement = XLSX.utils.json_to_sheet(toExcelSheet(beginPaidMovement));
+
 let wsRemovedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(removedOsBeginToEndMonth)
 );
@@ -562,7 +651,7 @@ let wsAddedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(addedOsEndFromBeginMonth)
 );
 let wsCombinedOs = XLSX.utils.json_to_sheet(
-  toExcelSheet(intimatedPaidMovement)
+  toExcelSheet(intimatedEndOsMovement)
 );
 let wsRevivedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(revivedClaims),
@@ -653,6 +742,9 @@ wb.Sheets["CLOSED AS NO CLAIM"] = wsClosedASNoClaim;
 wb.Sheets["CLAIMS IN LAST AND CURRENT OS"] = wsInBeginingEnd;
 wb.Sheets["MOVED UP CLAIMS"] = wsUpMovement;
 wb.Sheets["MOVED DOWN CLAIMS"] = wsDownMovement;
+wb.Sheets["INT-OS END MOVEMENT"] = wsIntimatedEndOSmovement;
+wb.Sheets["INT-PAID MOVEMENT"] = wsIntimatedPaidMovement;
+wb.Sheets["OS BEGIN-PAID MOVEMENT"] = wsbeginPaidMovement;
 wb.Sheets["REVIVED CLAIMS"] = wsRevivedOs;
 wb.Sheets["MOVEMENT SUMMARY"] = wsMovementSummary;
 wb.Sheets["CLOSED AS NO CLAIM SUMMARY"] = wsClosedAsNoClaimSummary;
@@ -666,17 +758,13 @@ XLSX.writeFile(wb, "./tmp/Unstyled Report.xlsx");
 
 XlsxPopulate.fromFileAsync("./tmp/Unstyled Report.xlsx")
   .then(function(otherWorkBook) {
-    
     const sheets = otherWorkBook.sheets();
-    sheets.map(function(sheet){
-    
-      sheet.row(1).style({ bold: true, fill: "ffff00", fontSize: 14 });
 
+    sheets.map(function(sheet) {
+      sheet.row(1).style({ bold: true, fill: "ffff00", fontSize: 14 });
     });
 
-
     return otherWorkBook.toFileAsync("./Final Report.xlsx");
-   
   })
   .catch(err => console.error(err));
 
@@ -716,3 +804,7 @@ WIBA - WORKERS INJURUY BENEFIT ACT, WORKMEN'S COMP (COMMON LAW) COVER, WORKMEN'S
 THEFT - ALL RISKS, BANKERS BLANKET INSURANCE, BUGRLARY, CASH IN TRANSIT, FIDELITY GUARANTEE - MGL/10/
 
 */
+
+
+
+// console.log("paid summary", calculatePerclass(payment, "paidAmount"));

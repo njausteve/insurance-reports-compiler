@@ -55,7 +55,7 @@ let paymentKeyChangesMap = {
   "CLAIM NO": "claimNo",
   "POLICY HOLDER": "policyHolder",
   "UW YEAR": "uwYear",
-  PAYEE: "payee",
+    PAYEE: "payee",
   "PAID AMOUNT": "paidAmount"
 };
 
@@ -250,52 +250,56 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
   let count = {};
 
   targetArray.map(function(claim) {
+
+    if(claim.policyNo){
     claimPrefixShort = claim.policyNo.slice(0, 6);
     claimPrefixLong = claim.policyNo.slice(0, 10);
+    }
 
+    insClass = claim.insuranceClass.trim().toString();
+
+  
     valueToPush = toFloat(claim[valueUsedToCalculate]);
 
-    if (claimPrefixShort == "MGL/07") {
+    if (insClass === 'MOTOR CYCLE' || insClass === 'MOTOR PRIVATE' || insClass === 'MOTOR PRIVATE ENHANCED' ) {
       motorPrivate.push(valueToPush);
 
       // motor private
-    } else if (claimPrefixLong === "MGL/08/084") {
+    } else if (insClass === 'MOTOR (PSV) PRIVATE HIRE'  ) {
       // MOTOR PSV HIRE
       motorPsvHire.push(valueToPush);
-    } else if (claimPrefixShort === "MGL/12") {
+    } else if ( insClass === 'BONDS ( I A TA) FINANCIAL GUARA'||  insClass === 'GOLFERS/SPORTSMAN INSURANCE') {
       // MISCELLANEOUS
-
+        
       miscellaneous.push(valueToPush);
-    } else if (claimPrefixShort === "MGL/03") {
+    } else if (insClass === 'FIRE DOMESTIC (HOC)') {
       // FIRE DOMESTIC
 
       fireDomestic.push(valueToPush);
-    } else if (claimPrefixShort === "MGL/06") {
+    } else if ( insClass === 'GOODS IN TRANSIT'||  insClass === 'MARINE CARGO' ||  insClass === 'MARINE OPEN COVER') {
       // MARINE
 
       marine.push(valueToPush);
-    } else if (claimPrefixShort === "MGL/04") {
+    } else if (  insClass === 'INDUSTRIAL ALL RISKS'||  insClass === 'FIRE INDUSTRIAL') {
       fireIndustrial.push(valueToPush);
       // FIRE INDUSTRIAL
-    } else if (claimPrefixShort === "MGL/05") {
+    } else if (insClass === 'CARRIERS LIABILITY POLICY'||  insClass === 'CONTRACTUAL LIABILITY POLICY'||  insClass === 'PORT LIABILITY POLICY'||  insClass === 'PUBLIC LIABILITY'||  insClass === 'WAREHOUSE LIABILITY POLICY') {
       liabilities.push(valueToPush);
       // LIABILITIES
-    } else if (claimPrefixShort === "MGL/08") {
+    } else if (insClass === 'MOTOR COMMERCIAL'||  insClass === 'MOTOR GENERAL CARTAGE'||  insClass === 'MOTOR TRACTORS'||  insClass === 'MOTOR TRADE') {
       // MOTOR COMMERCIAL
       motorCommercial.push(valueToPush);
-    } else if (claimPrefixShort === "MGL/02") {
+    } else if (insClass === 'CONTRACTORS ALL RISKS'||  insClass === 'ELECTRONIC EQUIPMENT'||  insClass === 'ERECTION ALL RISKS'||  insClass === 'L.O.P. FOLLOWING MACHINERY B/DOWN'||  insClass === 'MACHINERY BREAKDOWN') {
       // ENGINEERING
       engineering.push(valueToPush);
-    } else if (claimPrefixShort === "MGL/10") {
+    } else if (insClass === 'ALL RISKS'||  insClass === 'BANKERS BLANKET INSURANCE'||  insClass === 'BURGLARY'||  insClass === 'CASH IN TRANSIT'||  insClass === 'FIDELITY GUARANTEE') {
       // THEFT
       theft.push(valueToPush);
-    } else if (claimPrefixShort === "MGL/11") {
+    } else if ( insClass === 'WORKERS INJURY BENEFIT ACT'||  insClass === "WORKMEN'S COMP (COMMON LAW) COVER"||  insClass === "WORKMEN'S COMPENSATION (ACT) CO") {
       // WIBA
       wiba.push(valueToPush);
     } else if (
-      claimPrefixLong === "MGL/09/096" ||
-      claimPrefixLong === "MGL/09/091" ||
-      claimPrefixLong === "MGL/09/099"
+     insClass === 'ACCIDENT HOSPITALISATION INS. P'||  insClass === 'HEALTH/MEDICAL EXPENSES INSURANCE'||  insClass === 'INDIVIDUAL MEDICAL INSURANCE'
     ) {
       // medical
       medical.push(valueToPush);
@@ -364,6 +368,9 @@ function getMovementSummary() {
   return movementSummary;
 }
 
+
+
+
 // get summary for any sheet
 function getSummary(targetSheet, valueToRefer) {
   let summary = [];
@@ -428,7 +435,6 @@ let intimatedPaidSummary = getSummary(intimatedPaidMovement, "difference");
 
 
 
-
 // claims in intimated and EndOs Estimates without Endestimate amount data
 let intimatedEndOsIncomplete = _.intersectionBy(
   intimated,
@@ -458,6 +464,12 @@ let intimatedEndOsMovement = intimatedEndOsIncomplete.map(function(claim) {
 
   return newObj;
 }).filter( claim => claim.difference != 0 );
+
+
+// summary for intimatedEndOsMovement
+
+
+let intimatedEndOsMovementSummary = getSummary(intimatedEndOsMovement, "difference");
 
 
 
@@ -492,6 +504,20 @@ let beginPaidMovement = beginPaidIncomplete.map(function(claim) {
 }).filter( claim => claim.difference != 0 );
 
 
+
+// summary for beginPaidMovement
+let beginPaidMovementSummary = getSummary(beginPaidMovement, "difference");
+
+
+
+// get accurate count for paid ---> do not consider amounts as duplicate claim no are removed
+
+
+
+let paidSummary = getSummary(_.uniqBy(payment, 'claimNo'), "paidAmount");
+
+
+console.log("paymentSummary", paidSummary);
 
 // 
 

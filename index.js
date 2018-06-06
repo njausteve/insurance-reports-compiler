@@ -82,6 +82,7 @@ let printToExcelKeysmap = {
   difference: "DIFFERENCE"
 };
 
+
 // check sheet Fields
 
 function checkSheetFields() {
@@ -132,44 +133,18 @@ function checkSheetFields() {
 
 console.log(checkSheetFields());
 
+
+
+// assignment
+
 let osBeginMonth = objectRenameKeys(sheet1, osBeginKeyChangesMap);
-let intimated = objectRenameKeys(sheet2, intimatedKeyChangesMap);
-let payment = objectRenameKeys(sheet3, paymentKeyChangesMap);
+let intimatedWithZeros = objectRenameKeys(sheet2, intimatedKeyChangesMap);
+let paymentWithDuplicate = objectRenameKeys(sheet3, paymentKeyChangesMap);
 let osEndMonth = objectRenameKeys(sheet4, osEndMonthKeyChangesMap);
 
-let combinedOsWithDuplicates = _.concat(osEndMonth, osBeginMonth, "claimNo");
 
-// [Removed OS] : to find those in the osEndMonth but not in the osBeginMonth
-let addedOsEndFromBeginMonth = _.differenceBy(
-  osEndMonth,
-  osBeginMonth,
-  "claimNo"
-);
 
-// [Added OS]: to find those in the osBeginMonth but not in the osEndMonth
-let removedOsBeginToEndMonth = _.differenceBy(
-  osBeginMonth,
-  osEndMonth,
-  "claimNo"
-);
 
-// sheet with those that appear ib begining and End OS estimate
-let osNoChange = _.intersectionBy(osBeginMonth, osEndMonth, "claimNo");
-
-// sheet with those that appear in begining and End OS estimate : repeated
-let osRepeatedClaimNo = osNoChange.map(function(claim) {
-  let newObj = {};
-
-  combinedOsWithDuplicates.map(function(combineClaim) {
-    if (combineClaim.claimNo === claim.claimNo) {
-      for (const prop in combineClaim) {
-        newObj[prop] = combineClaim[prop];
-      }
-    }
-  });
-
-  return newObj;
-});
 
 // convert all keys to original
 function toExcelSheet(sheetToprint) {
@@ -207,6 +182,86 @@ function movementTotal(movementArray) {
     return prev + cur.difference;
   }, 0);
 }
+
+
+
+let combinedOsWithDuplicates = _.concat(osEndMonth, osBeginMonth, "claimNo");
+
+
+// [Removed OS] : to find those in the osEndMonth but not in the osBeginMonth
+let addedOsEndFromBeginMonth = _.differenceBy(
+  osEndMonth,
+  osBeginMonth,
+  "claimNo"
+);
+
+// [Added OS]: to find those in the osBeginMonth but not in the osEndMonth
+let removedOsBeginToEndMonth = _.differenceBy(
+  osBeginMonth,
+  osEndMonth,
+  "claimNo"
+);
+
+// sheet with those that appear ib begining and End OS estimate
+let osNoChange = _.intersectionBy(osBeginMonth, osEndMonth, "claimNo");
+
+// sheet with those that appear in begining and End OS estimate : repeated
+let osRepeatedClaimNo = osNoChange.map(function(claim) {
+  let newObj = {};
+
+  combinedOsWithDuplicates.map(function(combineClaim) {
+    if (combineClaim.claimNo === claim.claimNo) {
+      for (const prop in combineClaim) {
+        newObj[prop] = combineClaim[prop];
+      }
+    }
+  });
+
+  return newObj;
+});
+
+
+
+// payments adjustments
+
+let uniquePaidClaimNo = _.uniqBy(paymentWithDuplicate, 'claimNo').map(claim=> claim.claimNo);
+
+
+let payments = uniquePaidClaimNo.map(function(claimNo){
+
+  let totalPaid = 0;
+  let newObj = {};
+
+
+  paymentWithDuplicate.map(function(dupClaim){
+       
+      for(const prop in dupClaim){
+
+         if(claimNo === dupClaim.claimNo ){
+          
+                if(prop === 'paidAmount' ){
+
+                  totalPaid = totalPaid + toFloat(dupClaim.paidAmount);
+
+                  newObj.paidAmount = totalPaid;
+
+                }else{
+                  newObj[prop] = dupClaim[prop]; 
+                }
+         }
+      }
+  });
+     
+  return newObj;
+
+}).filter( claim => claim.paidAmount != 0 );
+
+
+// remove zero values claims from intimated
+
+let intimated = intimatedWithZeros.filter(claim => claim.intimationReserve != 0 );
+
+
 
 //  sheet with upward movement + differences
 let movementUp = osRepeatedClaimNo
@@ -403,13 +458,13 @@ function getSummary(targetSheet, valueToRefer) {
 
 let intimatedAndPaidIncomplete = _.intersectionBy(
   intimated,
-  payment,
+  payments,
   "claimNo"
 );
 
 // intimated and paid all {duplicates}
 
-let intimatedPaidMovementwithDuplicates = _.concat(intimated, payment);
+let intimatedPaidMovementwithDuplicates = _.concat(intimated, payments);
 
 let intimatedPaidMovement = intimatedAndPaidIncomplete.map(function(claim) {
   let newObj = {};
@@ -476,22 +531,25 @@ let intimatedEndOsMovementSummary = getSummary(intimatedEndOsMovement, "differen
 // claims in Begining OS estimates and paid (payments) without paid amount data
 let beginPaidIncomplete = _.intersectionBy(
   osBeginMonth,
-  payment,
+  payments,
   "claimNo"
 );
 
 // Begining OS estimates and paid (payments) all {duplicates}
-let beginPaidMovementDuplicates = _.concat(osBeginMonth, payment);
+let beginPaidMovementDuplicates = _.concat(osBeginMonth, payments);
 
 
 // sheet with Begining OS estimates and paid (payments) movements
 let beginPaidMovement = beginPaidIncomplete.map(function(claim) {
 
   let newObj = {};
+  
   beginPaidMovementDuplicates.map(function(combineClaim) {
     if (combineClaim.claimNo === claim.claimNo ) {
       for (const prop in combineClaim) {
+
         newObj[prop] = combineClaim[prop];
+
         if (newObj.paidAmount != undefined) {
           newObj.difference =
             toFloat(newObj.paidAmount) - toFloat(newObj.osBeginEstimate);
@@ -503,25 +561,6 @@ let beginPaidMovement = beginPaidIncomplete.map(function(claim) {
   return newObj;
 }).filter( claim => claim.difference != 0 );
 
-
-
-// summary for beginPaidMovement
-let beginPaidMovementSummary = getSummary(beginPaidMovement, "difference");
-
-
-
-// get accurate count for paid ---> do not consider amounts as duplicate claim no are removed
-
-
-
-let paidSummary = getSummary(_.uniqBy(payment, 'claimNo'), "paidAmount");
-
-
-console.log("paymentSummary", paidSummary);
-
-// 
-
-// console.log("osEndMonthEstimate -------> ", intimatedEndOsMovement);
 
 
 // combined sheet OS begining and end no dubplictes:
@@ -563,7 +602,7 @@ let revivedClaims = _.differenceBy(
 // sheet for claims closed as having no claim
 let closedAsNoClaim = _.differenceBy(
   removedOsBeginToEndMonth,
-  payment,
+  payments,
   "claimNo"
 );
 
@@ -574,6 +613,13 @@ let closedAsNoClaimSummary = getSummary(closedAsNoClaim, "osBeginEstimate");
 let revivedClaimsSummary = getSummary(revivedClaims, "osEndMonthEstimate");
 
 let movementSummary = getMovementSummary();
+
+let paidSummary = getSummary(payments, "paidAmount");
+
+let intimatedSummary = getSummary(intimated, "intimationReserve");
+
+
+console.log("intimatedSummary", intimatedSummary);
 
 let totalMovementSummary = movementSummary.map(function(moveClass) {
   let newObj = {};
@@ -677,7 +723,7 @@ let wsAddedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(addedOsEndFromBeginMonth)
 );
 let wsCombinedOs = XLSX.utils.json_to_sheet(
-  toExcelSheet(intimatedEndOsMovement)
+  toExcelSheet(beginPaidIncomplete)
 );
 let wsRevivedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(revivedClaims),

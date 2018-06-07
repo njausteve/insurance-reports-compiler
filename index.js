@@ -196,21 +196,24 @@ let removedOsBeginToEndMonth = _.differenceBy(
 let osNoChange = _.intersectionBy(osBeginMonth, osEndMonth, "claimNo");
 
 // sheet with those that appear in begining and End OS estimate : repeated
-let osRepeatedClaimNo = osNoChange.map(function(claim) {
-  let newObj = {};
+let osRepeatedClaimNo = osNoChange
+  .map(function(claim) {
+    let newObj = {};
 
-  combinedOsWithDuplicates.map(function(combineClaim) {
-    if (combineClaim.claimNo === claim.claimNo) {
-      for (const prop in combineClaim) {
-        newObj[prop] = combineClaim[prop];
+    combinedOsWithDuplicates.map(function(combineClaim) {
+      if (combineClaim.claimNo === claim.claimNo) {
+        for (const prop in combineClaim) {
+          newObj[prop] = combineClaim[prop];
+        }
       }
-    }
-  });
+    });
 
-  return newObj;
-  
-}).filter(claim => toFloat(claim.osBeginEstimate) - toFloat(claim.osEndMonthEstimate) != 0);
-
+    return newObj;
+  })
+  .filter(
+    claim =>
+      toFloat(claim.osBeginEstimate) - toFloat(claim.osEndMonthEstimate) != 0
+  );
 
 // payments adjustments
 
@@ -246,19 +249,62 @@ let intimated = intimatedWithZeros.filter(
   claim => claim.intimationReserve != 0
 );
 
-
 //  sheet with upward movement + differences
 let movedUpWithDifference = osRepeatedClaimNo
   .filter(function(claim) {
-    return toFloat(claim.osBeginEstimate) < toFloat(claim.osEndMonthEstimate);    
+    return toFloat(claim.osBeginEstimate) < toFloat(claim.osEndMonthEstimate);
   })
   .map(calcMovement);
 
-  let movementUpNoPaid =  _.differenceBy(
-    movedUpWithDifference,
-    payments,
-    "claimNo"
-  );
+let movementUpNoPaid = _.differenceBy(
+  movedUpWithDifference,
+  payments,
+  "claimNo"
+);
+
+
+/* ============== BeginingEndMovement with Paid =============*/
+
+//  Begining - End movement 
+let movementWithPaidUniqueClaimNo = _
+  .intersectionBy(osRepeatedClaimNo, payments, "claimNo")
+  .map(claim => claim.claimNo);
+
+// combine all those in Begining, End and In paid (with duplicates);
+let begEndPaidCombined = _.concat(osRepeatedClaimNo, payments);
+
+
+
+//  Begining - End movement with claim paid (paidAmount + EndOsEstimate) - beginingOsEstimate
+let begEndmovementWithPaid = movementWithPaidUniqueClaimNo
+  .map(function(claimNo) {
+    let newObj = {};
+
+    begEndPaidCombined.map(function(dupClaim) {
+      if (dupClaim.claimNo === claimNo) {
+        for (const prop in dupClaim) {
+          newObj[prop] = dupClaim[prop];
+        }
+      }
+    });
+
+    return newObj;
+  })
+  .map(function(claim) {
+    claim.difference =
+      toFloat(claim.paidAmount) +
+      toFloat(claim.osEndMonthEstimate) -
+      toFloat(claim.osBeginEstimate);
+
+    return claim;
+  })
+  .filter(claim => claim.difference != 0);
+
+
+
+  
+
+/*
 
 //  sheet with downward movement + differences - paid
 let movementDownWithDifference = osRepeatedClaimNo
@@ -274,6 +320,11 @@ let movementDownNoPaid =  _.differenceBy(
   payments,
   "claimNo"
 );
+
+
+
+
+
 
 
 

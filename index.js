@@ -208,7 +208,9 @@ let osRepeatedClaimNo = osNoChange.map(function(claim) {
   });
 
   return newObj;
-});
+  
+}).filter(claim => toFloat(claim.osBeginEstimate) - toFloat(claim.osEndMonthEstimate) != 0);
+
 
 // payments adjustments
 
@@ -240,32 +242,46 @@ let payments = uniquePaidClaimNo
   .filter(claim => claim.paidAmount != 0);
 
 // remove zero values claims from intimated
-
 let intimated = intimatedWithZeros.filter(
   claim => claim.intimationReserve != 0
 );
 
+
 //  sheet with upward movement + differences
-let movementUp = osRepeatedClaimNo
+let movedUpWithDifference = osRepeatedClaimNo
   .filter(function(claim) {
-    if (toFloat(claim.osBeginEstimate) < toFloat(claim.osEndMonthEstimate)) {
-      return claim;
-    }
+    return toFloat(claim.osBeginEstimate) < toFloat(claim.osEndMonthEstimate);    
   })
   .map(calcMovement);
 
-//  sheet with downward movement + differences
-let movementDown = osRepeatedClaimNo
+  let movementUpNoPaid =  _.differenceBy(
+    movedUpWithDifference,
+    payments,
+    "claimNo"
+  );
+
+//  sheet with downward movement + differences - paid
+let movementDownWithDifference = osRepeatedClaimNo
+
   .filter(function(claim) {
-    if (toFloat(claim.osBeginEstimate) > toFloat(claim.osEndMonthEstimate)) {
-      return claim;
-    }
+      return toFloat(claim.osBeginEstimate) > toFloat(claim.osEndMonthEstimate); 
   })
   .map(calcMovement);
 
-//   sheet with total up + down
 
-let movementUpDown = _.concat(movementUp, movementDown);
+let movementDownNoPaid =  _.differenceBy(
+  movementDownWithDifference,
+  payments,
+  "claimNo"
+);
+
+
+
+//   sheet with total up + down that do not appear in Payments
+
+let movementUpDownNoPaid = _.concat(movementUpNoPaid, movementDownNoPaid);
+
+
 
 function calculatePerclass(targetArray, valueUsedToCalculate) {
   //console.log("targetArray", targetArray);
@@ -321,7 +337,8 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
     } else if (
       insClass === "GOODS IN TRANSIT" ||
       insClass === "MARINE CARGO" ||
-      insClass === "MARINE OPEN COVER"
+      insClass === "MARINE OPEN COVER" ||
+      insClass === "MARINE HULL"
     ) {
       // MARINE
 
@@ -384,6 +401,7 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
     } else {
       // ACCIDENT
       accident.push(valueToPush);
+
     }
   });
 
@@ -551,11 +569,13 @@ let intimatedEndOsMovementSummary = getSummary(
 // claims in Begining OS estimates and paid (payments) without paid amount data
 let beginPaidIncomplete = _.intersectionBy(osBeginMonth, payments, "claimNo");
 
+
+
 // Begining OS estimates and paid (payments) all {duplicates}
 let beginPaidMovementDuplicates = _.concat(osBeginMonth, payments);
 
 // sheet with Begining OS estimates and paid (payments) movements
-let beginPaidMovement = beginPaidIncomplete
+let beginPaid = beginPaidIncomplete
   .map(function(claim) {
     let newObj = {};
 
@@ -567,6 +587,52 @@ let beginPaidMovement = beginPaidIncomplete
           if (newObj.paidAmount != undefined) {
             newObj.difference =
               toFloat(newObj.paidAmount) - toFloat(newObj.osBeginEstimate);
+          }
+        }
+      }
+    });
+
+    return newObj;
+  })
+  .filter(claim => claim.difference != 0);
+
+
+
+let beginPaidMovement = _.differenceBy(
+  beginPaid,
+  osEndMonth,
+  "claimNo"
+);
+
+
+
+
+// total movement =   beginPaidMovement + intimatedEndOsMovement + intimatedPaidMovement + movementUpDown
+
+let totalMovementWithDuplicates = _.concat(
+  movementUpDown,
+  beginPaidMovement,
+  intimatedEndOsMovement,
+  intimatedPaidMovement
+);
+
+let totalMovementUniqueClaimNo = _
+  .uniqBy(totalMovementWithDuplicates, "claimNo")
+  .map(claim => claim.claimNo);
+
+let totalMovement = totalMovementUniqueClaimNo
+  .map(function(claimNo) {
+    let totaldifference = 0;
+    let newObj = {};
+
+    totalMovementWithDuplicates.map(function(dupClaim) {
+      for (const prop in dupClaim) {
+        if (claimNo === dupClaim.claimNo) {
+          if (prop === "difference") {
+            totaldifference = totaldifference + toFloat(dupClaim.difference);
+            newObj.difference = totaldifference;
+          } else {
+            newObj[prop] = dupClaim[prop];
           }
         }
       }
@@ -628,25 +694,29 @@ let paidSummary = getSummary(payments, "paidAmount");
 
 let intimatedSummary = getSummary(intimated, "intimationReserve");
 
-let totalMovementSummary = movementSummary.map(function(moveClass) {
-  let newObj = {};
+// let totalMovementSummary = movementSummary.map(function(moveClass) {
+//   let newObj = {};
 
-  intimatedPaidSummary.map(function(intPaidClass) {
-    for (const prop in intPaidClass) {
-      if (intPaidClass[prop] == moveClass.CLASS) {
-        newObj = {
-          CLASS: moveClass.CLASS,
-          COUNT: intPaidClass.COUNT + moveClass.COUNT,
-          TOTAL: toCurrency(
-            toFloat(intPaidClass.TOTAL) + toFloat(moveClass.TOTAL)
-          )
-        };
-      }
-    }
-  });
+//   intimatedPaidSummary.map(function(intPaidClass) {
+//     for (const prop in intPaidClass) {
+//       if (intPaidClass[prop] == moveClass.CLASS) {
+//         newObj = {
+//           CLASS: moveClass.CLASS,
+//           COUNT: intPaidClass.COUNT + moveClass.COUNT,
+//           TOTAL: toCurrency(
+//             toFloat(intPaidClass.TOTAL) + toFloat(moveClass.TOTAL)
+//           )
+//         };
+//       }
+//     }
+//   });
 
-  return newObj;
-});
+//   return newObj;
+// });
+
+let totalMovementSummary = getSummary(totalMovement, "difference");
+
+console.log("intimatedSummary", intimatedSummary);
 
 // create work book
 let wb = XLSX.utils.book_new();
@@ -737,7 +807,7 @@ let wsRemovedOs = XLSX.utils.json_to_sheet(
 let wsAddedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(addedOsEndFromBeginMonth)
 );
-let wsCombinedOs = XLSX.utils.json_to_sheet(toExcelSheet(beginPaidIncomplete));
+let wsCombinedOs = XLSX.utils.json_to_sheet(toExcelSheet(totalMovementWithDuplicates));
 let wsRevivedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(revivedClaims),
   revivedHeader

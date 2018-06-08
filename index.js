@@ -509,6 +509,44 @@ let beginEndmovementWithPaid = movementWithPaidUniqueClaimNo
   })
   .filter(claim => claim.difference != 0);
 
+
+//============== BeginingPaidEndMovement without End OS estimate =============
+
+// claims in Begining OS estimates and paid (payments) without paid amount data
+let beginPaidIncomplete = _.intersectionBy(osBeginMonth, payments, "claimNo");
+
+// Begining OS estimates and paid (payments) all {duplicates}
+let beginPaidMovementDuplicates = _.concat(osBeginMonth, payments);
+
+// sheet with Begining OS estimates and paid (payments) movements
+let beginPaid = beginPaidIncomplete
+  .map(function(claim) {
+    let newObj = {};
+
+    beginPaidMovementDuplicates.map(function(combineClaim) {
+      if (combineClaim.claimNo === claim.claimNo) {
+        for (const prop in combineClaim) {
+          newObj[prop] = combineClaim[prop];
+
+          if (newObj.paidAmount != undefined) {
+            newObj.difference =
+              toFloat(newObj.paidAmount) - toFloat(newObj.osBeginEstimate);
+          }
+        }
+      }
+    });
+
+    return newObj;
+  })
+  .filter(claim => claim.difference != 0);
+
+// sheet with Begining OS estimates and paid (payments) movements that are not In OsEndmonth
+let beginPaidMovementNoEndOS = _.differenceBy(beginPaid, osEndMonth, "claimNo");
+
+
+
+
+
 // ============== intimation related movements =============
 
 // claimsNo for claims in intimated and paid
@@ -600,13 +638,7 @@ let intimatedPaidMovementWithEndOs = _
     return newObj;
   });
 
-
-
-// intimated Paid movement
-
-/*
-
-// let intimatedPaidSummary = getSummary(intimatedPaidMovement, "difference");
+//=============== intimated End no paid =====================
 
 // claims in intimated and EndOs Estimates without Endestimate amount data
 let intimatedEndOsIncomplete = _.intersectionBy(
@@ -619,7 +651,6 @@ let intimatedEndOsIncomplete = _.intersectionBy(
 let intimatedEndOsMovementDuplicates = _.concat(intimated, osEndMonth);
 
 // sheet with intimated - EndOS movement
-
 let intimatedEndOsMovement = intimatedEndOsIncomplete
   .map(function(claim) {
     let newObj = {};
@@ -640,58 +671,51 @@ let intimatedEndOsMovement = intimatedEndOsIncomplete
   })
   .filter(claim => claim.difference != 0);
 
-// summary for intimatedEndOsMovement
+// intimated-End movement with no claims from paid
 
-let intimatedEndOsMovementSummary = getSummary(
+let intimatedEndOsMovementNoPaid = _.differenceBy(
   intimatedEndOsMovement,
-  "difference"
+  payments,
+  "claimNo"
 );
 
 
+/* ================== closed As No claim  =============== */
+
+let intimatedNotPaidclaims = _.differenceBy(intimated, payments, 'claimNo');
 
 
-// claims in Begining OS estimates and paid (payments) without paid amount data
-let beginPaidIncomplete = _.intersectionBy(osBeginMonth, payments, "claimNo");
+// sheet for claims closed as having no claim From Intimated 
 
-// Begining OS estimates and paid (payments) all {duplicates}
-let beginPaidMovementDuplicates = _.concat(osBeginMonth, payments);
+let intimatedClosedAsNoClaim = _.differenceBy(intimatedNotPaidclaims, osEndMonth, 'claimNo');
 
-// sheet with Begining OS estimates and paid (payments) movements
-let beginPaid = beginPaidIncomplete
-  .map(function(claim) {
-    let newObj = {};
-
-    beginPaidMovementDuplicates.map(function(combineClaim) {
-      if (combineClaim.claimNo === claim.claimNo) {
-        for (const prop in combineClaim) {
-          newObj[prop] = combineClaim[prop];
-
-          if (newObj.paidAmount != undefined) {
-            newObj.difference =
-              toFloat(newObj.paidAmount) - toFloat(newObj.osBeginEstimate);
-          }
-        }
-      }
-    });
-
-    return newObj;
-  })
-  .filter(claim => claim.difference != 0);
-
-// sheet with Begining OS estimates and paid (payments) movements that are not In OsEndmonth
-let beginPaidMovementNoEndOS = _.differenceBy(
-  beginPaid,
-  osEndMonth,
+// sheet for claims closed as having no claim From Begining OS
+let beginingClosedAsNoClaim = _.differenceBy(
+  removedOsBeginToEndMonth,
+  payments,
   "claimNo"
 );
 
 
 
-
+console.log("beginingClosedAsNoClaim", beginingClosedAsNoClaim);
 
 
 
 // total movement =   beginPaidMovement + intimatedEndOsMovement + intimatedPaidMovement + movementUpDown
+
+
+
+
+
+
+
+
+
+
+/*
+
+
 
 let totalMovementWithDuplicates = _.concat(
   movementUpDown,
@@ -733,7 +757,7 @@ let totalMovement = totalMovementUniqueClaimNo
 //     addedOsEndFromBeginMonth,
 //     removedOsBeginToEndMonth,
 //     osRepeatedClaimNo,
-//     "claimNO"
+//     "claimNo"
 //   )
 //   .map(function(claim) {
 //     let newObj = {};
@@ -759,12 +783,7 @@ let revivedClaims = _.differenceBy(
   "claimNo"
 );
 
-// sheet for claims closed as having no claim
-let closedAsNoClaim = _.differenceBy(
-  removedOsBeginToEndMonth,
-  payments,
-  "claimNo"
-);
+
 
 // summary sheets
 
@@ -891,7 +910,9 @@ let wsRemovedOs = XLSX.utils.json_to_sheet(
 let wsAddedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(addedOsEndFromBeginMonth)
 );
-let wsCombinedOs = XLSX.utils.json_to_sheet(toExcelSheet(totalMovementWithDuplicates));
+let wsCombinedOs = XLSX.utils.json_to_sheet(
+  toExcelSheet(totalMovementWithDuplicates)
+);
 let wsRevivedOs = XLSX.utils.json_to_sheet(
   toExcelSheet(revivedClaims),
   revivedHeader

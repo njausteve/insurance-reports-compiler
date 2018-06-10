@@ -509,7 +509,6 @@ let beginEndmovementWithPaid = movementWithPaidUniqueClaimNo
   })
   .filter(claim => claim.difference != 0);
 
-
 //============== BeginingPaidEndMovement without End OS estimate =============
 
 // claims in Begining OS estimates and paid (payments) without paid amount data
@@ -542,10 +541,6 @@ let beginPaid = beginPaidIncomplete
 
 // sheet with Begining OS estimates and paid (payments) movements that are not In OsEndmonth
 let beginPaidMovementNoEndOS = _.differenceBy(beginPaid, osEndMonth, "claimNo");
-
-
-
-
 
 // ============== intimation related movements =============
 
@@ -679,15 +674,17 @@ let intimatedEndOsMovementNoPaid = _.differenceBy(
   "claimNo"
 );
 
-
 /* ================== closed As No claim  =============== */
 
-let intimatedNotPaidclaims = _.differenceBy(intimated, payments, 'claimNo');
+let intimatedNotPaidclaims = _.differenceBy(intimated, payments, "claimNo");
 
+// sheet for claims closed as having no claim From Intimated
 
-// sheet for claims closed as having no claim From Intimated 
-
-let intimatedClosedAsNoClaim = _.differenceBy(intimatedNotPaidclaims, osEndMonth, 'claimNo');
+let intimatedClosedAsNoClaim = _.differenceBy(
+  intimatedNotPaidclaims,
+  osEndMonth,
+  "claimNo"
+);
 
 // sheet for claims closed as having no claim From Begining OS
 let beginingClosedAsNoClaim = _.differenceBy(
@@ -696,22 +693,112 @@ let beginingClosedAsNoClaim = _.differenceBy(
   "claimNo"
 );
 
+let intimatedClosedAsNoClaimSummary = getSummary(
+  intimatedClosedAsNoClaim,
+  "intimationReserve"
+);
+
+let beginingClosedAsNoClaimSummary = getSummary(
+  beginingClosedAsNoClaim,
+  "osBeginEstimate"
+);
+
+let totalClosedAsNoClaimSummary = intimatedClosedAsNoClaimSummary.map(function(
+  intClosedClaim
+) {
+  let newObj = {};
+
+  let totalCount = intClosedClaim.COUNT;
+  let total = toFloat(intClosedClaim.TOTAL);
+
+  beginingClosedAsNoClaimSummary.map(function(beginingClosedClaim) {
+    if (intClosedClaim.CLASS === beginingClosedClaim.CLASS) {
+      totalCount = totalCount + beginingClosedClaim.COUNT;
+
+      total = total + toFloat(beginingClosedClaim.TOTAL);
+
+      newObj = {
+        CLASS: beginingClosedClaim.CLASS,
+        COUNT: totalCount,
+        TOTAL: total.toFixed(2)
+      };
+    }
+  });
+
+  return newObj;
+});
 
 
-console.log("beginingClosedAsNoClaim", beginingClosedAsNoClaim);
+/* ================== Revived claim  =============== */
+
+let combinedIntimatedBegininingOs = _.concat(osBeginMonth, intimated);
 
 
+let EndOSNotInBeginIntimatedRevived = _.differenceBy(
+  addedOsEndFromBeginMonth,
+  intimated,
+  "claimNo"
+);
+
+let paidNotInIntmatedBeginingOsRevived = _.differenceBy(
+  payments,
+  combinedIntimatedBegininingOs,
+  "claimNo"
+);
+
+let paidNotInIntmatedBeginingOsRevivedSummary = getSummary(
+  paidNotInIntmatedBeginingOsRevived,
+  "paidAmount"
+);
+
+let EndOSNotInBeginIntimatedRevivedSummary = getSummary(
+  EndOSNotInBeginIntimatedRevived,
+  "osEndMonthEstimate"
+);
+
+let totalRevivedSummary = paidNotInIntmatedBeginingOsRevivedSummary.map(
+  function(inPaidClaim) {
+    let newObj = {};
+
+    let totalCount = inPaidClaim.COUNT;
+    let total = toFloat(inPaidClaim.TOTAL);
+
+    EndOSNotInBeginIntimatedRevivedSummary.map(function(endOsClaim) {
+      if (inPaidClaim.CLASS === endOsClaim.CLASS) {
+        totalCount = totalCount + endOsClaim.COUNT;
+
+        total = total + toFloat(endOsClaim.TOTAL);
+
+        newObj = {
+          CLASS: endOsClaim.CLASS,
+          COUNT: totalCount,
+          TOTAL: total.toFixed(2)
+        };
+      }
+    });
+
+    return newObj;
+  }
+);
+
+
+
+
+
+
+// let combinedOsbeginIntimated = _.concat(osBeginMonth, intimated);
+
+// let paidNotInBeginingIntimated = _.differenceBy(payments, combinedOsbeginIntimated, 'claimNo');
+
+// let combinedpaidBeginingIntimatedEndOs = _.concat(osBeginMonth, intimated, osEndMonth);
+
+// let paidNotInBeginingIntimatedEndOs = _.differenceBy(paidNotInBeginingIntimated, osEndMonth, 'claimNo' );
+
+// let paidNotInBeginingIntimatedInEndOS = _.intersectionBy(paidNotInBeginingIntimated, osEndMonth, 'claimNO');
+
+// console.log("paidNotInBeginingIntimatedInEndOS", paidNotInBeginingIntimatedInEndOS);
 
 // total movement =   beginPaidMovement + intimatedEndOsMovement + intimatedPaidMovement + movementUpDown
-
-
-
-
-
-
-
-
-
 
 /*
 
@@ -774,14 +861,6 @@ let totalMovement = totalMovementUniqueClaimNo
 //   });
 
 let combined12 = _.concat(osBeginMonth, intimated);
-
-// find values that are revived : present in Added but not intimated for this month
-
-let revivedClaims = _.differenceBy(
-  addedOsEndFromBeginMonth,
-  intimated,
-  "claimNo"
-);
 
 
 
@@ -918,7 +997,7 @@ let wsRevivedOs = XLSX.utils.json_to_sheet(
   revivedHeader
 );
 let wsClosedASNoClaim = XLSX.utils.json_to_sheet(
-  toExcelSheet(closedAsNoClaim),
+  toExcelSheet(totalClosedAsNoClaimSummary),
   closedAsnoClaimHeader
 );
 let wsInBeginingEnd = XLSX.utils.json_to_sheet(toExcelSheet(osRepeatedClaimNo));
@@ -940,7 +1019,7 @@ let wsClosedAsNoClaimSummary = XLSX.utils.json_to_sheet(
   summaryHeader
 );
 let wsRevivedClaimSummary = XLSX.utils.json_to_sheet(
-  revivedClaimsSummary,
+  totalRevivedSummary,
   summaryHeader
 );
 
@@ -1075,5 +1154,3 @@ WIBA - WORKERS INJURUY BENEFIT ACT, WORKMEN'S COMP (COMMON LAW) COVER, WORKMEN'S
 THEFT - ALL RISKS, BANKERS BLANKET INSURANCE, BUGRLARY, CASH IN TRANSIT, FIDELITY GUARANTEE - MGL/10/
 
 */
-
-// console.log("paid summary", calculatePerclass(payment, "paidAmount"));

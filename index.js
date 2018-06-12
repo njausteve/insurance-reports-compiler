@@ -1,5 +1,5 @@
 const XLSX = require("xlsx");
-const workbook = XLSX.readFile("./source file/insurance.xlsx");
+const workbook = XLSX.readFile("./source file/insurance April.xlsx");
 const XlsxPopulate = require("xlsx-populate");
 let sheetNameList = workbook.SheetNames;
 const _ = require("lodash");
@@ -79,7 +79,10 @@ let printToExcelKeysmap = {
   uwYear: "UW YEAR",
   payee: "PAYEE",
   paidAmount: "PAID AMOUNT",
-  difference: "DIFFERENCE"
+  difference: "DIFFERENCE",
+  revived: "REVIVED",
+  movement: "MOVED",
+  noClaim: "NO CLAIM"
 };
 
 // check sheet Fields
@@ -387,22 +390,21 @@ let removedOsBeginToEndMonth = _.differenceBy(
 let osNoChange = _.intersectionBy(osBeginMonth, osEndMonth, "claimNo");
 
 // sheet with those that appear in begining and End OS estimate : repeated
-let osRepeatedClaimNo = osNoChange
-  .map(function(claim) {
-    let newObj = {};
+let osRepeatedClaimNo = osNoChange.map(function(claim) {
+  let newObj = {};
 
-    combinedOsWithDuplicates.map(function(combineClaim) {
-      if (combineClaim.claimNo === claim.claimNo) {
-        for (const prop in combineClaim) {
-          newObj[prop] = combineClaim[prop];
-        }
+  combinedOsWithDuplicates.map(function(combineClaim) {
+    if (combineClaim.claimNo === claim.claimNo) {
+      for (const prop in combineClaim) {
+        newObj[prop] = combineClaim[prop];
       }
-    });
-
-    return newObj;
+    }
   });
 
-  /*
+  return newObj;
+});
+
+/*
   .filter(
     claim =>
       toFloat(claim.osBeginEstimate) - toFloat(claim.osEndMonthEstimate) != 0
@@ -751,9 +753,6 @@ let paidNotInIntimatedBeginingOsRevived = _.differenceBy(
   "claimNo"
 );
 
-
-
-
 let revivedClaims = _.concat(
   EndOSNotInBeginIntimatedRevived,
   paidNotInIntimatedBeginingOsRevived
@@ -794,9 +793,6 @@ let totalRevivedSummary = paidNotInIntimatedBeginingOsRevivedSummary.map(
   }
 );
 
-
-
-
 //================= total movement ==================
 
 let totalMovementCombined = _.concat(
@@ -807,8 +803,6 @@ let totalMovementCombined = _.concat(
   intimatedPaidMovementWithEndOs,
   intimatedEndOsMovementNoPaid
 );
-
-
 
 let combinedAllDuplicate = _.concat(
   osBeginMonth,
@@ -827,142 +821,232 @@ let combinedAll = combinedAllClaimUniqueClaimNo.map(function(claimNo) {
   combinedAllDuplicate.map(function(dupClaim) {
     for (const prop in dupClaim) {
       if (claimNo == dupClaim.claimNo) {
-     
         newObj[prop] = dupClaim[prop];
       }
     }
   });
- 
 
   return newObj;
 });
 
-
-
 //new movement logic
 
-let newCalcMovement = combinedAll.map(function(claim){
+let newCalcMovement = combinedAll
+  .map(function(claim) {
+    let newObj = {};
 
+    for (const prop in claim) {
+      newObj[prop] = claim[prop];
+    }
+
+    if (
+      claim.intimationReserve != undefined &&
+      claim.paidAmount != undefined &&
+      claim.osEndMonthEstimate != undefined
+    ) {
+      newObj.difference =
+        toFloat(claim.osEndMonthEstimate) +
+        toFloat(claim.paidAmount) -
+        toFloat(claim.intimationReserve);
+
+      newObj.movement = "YES";
+    } else if (
+      claim.osBeginEstimate != undefined &&
+      claim.paidAmount != undefined &&
+      claim.osEndMonthEstimate != undefined
+    ) {
+      newObj.difference =
+        toFloat(claim.osEndMonthEstimate) +
+        toFloat(claim.paidAmount) -
+        toFloat(claim.osBeginEstimate);
+
+      newObj.movement = "YES";
+    } else if (
+      claim.osBeginEstimate == undefined &&
+      claim.paidAmount != undefined &&
+      claim.osEndMonthEstimate != undefined
+    ) {
+      newObj.difference =
+        toFloat(claim.osEndMonthEstimate) - toFloat(claim.paidAmount);
+
+      newObj.movement = "YES";
+    } else if (
+      claim.osBeginEstimate != undefined &&
+      claim.paidAmount == undefined &&
+      claim.osEndMonthEstimate != undefined
+    ) {
+      newObj.difference =
+        toFloat(claim.osEndMonthEstimate) - toFloat(claim.osBeginEstimate);
+
+      newObj.movement = "YES";
+    } else if (
+      claim.intimationReserve == undefined &&
+      claim.paidAmount != undefined &&
+      claim.osEndMonthEstimate != undefined
+    ) {
+      newObj.difference =
+        toFloat(claim.osEndMonthEstimate) - toFloat(claim.paidAmount);
+
+      newObj.movement = "YES";
+    } else if (
+      claim.intimationReserve != undefined &&
+      claim.paidAmount == undefined &&
+      claim.osEndMonthEstimate != undefined
+    ) {
+      newObj.difference =
+        toFloat(claim.osEndMonthEstimate) - toFloat(claim.intimationReserve);
+
+      newObj.movement = "YES";
+    } else if (
+      claim.intimationReserve != undefined &&
+      claim.paidAmount != undefined &&
+      claim.osEndMonthEstimate == undefined
+    ) {
+      newObj.difference =
+        toFloat(claim.paidAmount) - toFloat(claim.intimationReserve);
+
+      newObj.movement = "YES";
+    } else if (
+      claim.osBeginEstimate != undefined &&
+      claim.paidAmount != undefined &&
+      claim.osEndMonthEstimate == undefined
+    ) {
+      newObj.difference =
+        toFloat(claim.paidAmount) - toFloat(claim.osBeginEstimate);
+
+      newObj.movement = "YES";
+    } else {
+      newObj.movement = "NO";
+    }
+
+    return newObj;
+  })
+  .filter(claim => claim.movement === "YES" && claim.paidAmount != undefined);
+
+let newRevivedclaims = combinedAll
+  .map(function(claim) {
+    let newObj = {};
+
+    for (const prop in claim) {
+      newObj[prop] = claim[prop];
+    }
+
+    if (
+      claim.osBeginEstimate == undefined &&
+      claim.intimationReserve == undefined &&
+      claim.osEndMonthEstimate == undefined &&
+      claim.paidAmount != undefined
+    ) {
+      newObj.revived = "YES";
+      newObj.difference = claim.paidAmount;
+    } else if (
+      claim.intimationReserve == undefined &&
+      claim.osBeginEstimate == undefined &&
+      claim.paidAmount != undefined &&
+      claim.osEndMonthEstimate != undefined
+    ) {
+      newObj.revived = "YES";
+      newObj.difference =
+        toFloat(claim.osEndMonthEstimate) - toFloat(claim.paidAmount);
+    } else if (
+      claim.osBeginEstimate == undefined &&
+      claim.intimationReserve == undefined &&
+      claim.paidAmount == undefined &&
+      claim.osEndMonthEstimate != undefined
+    ) {
+      newObj.revived = "YES";
+      newObj.difference = claim.osEndMonthEstimate;
+    } else {
+      newObj.revived = "NO";
+    }
+
+    return newObj;
+  })
+  .filter(claim => claim.revived === "YES" && claim.difference != 0);
+
+console.log(
+  "newRevivedclaims summary",
+  getSummary(newRevivedclaims, "difference")
+);
+
+let newClosedAsNoClaim = combinedAll.map(function(claim) {
   let newObj = {};
 
-
-  for(const prop in claim){
-
+  for (const prop in claim) {
     newObj[prop] = claim[prop];
   }
 
-
-  if(claim.intimationReserve != undefined && claim.paidAmount != undefined && claim.osEndMonthEstimate != undefined ){
-
-        newObj.difference = toFloat(claim.osEndMonthEstimate) + toFloat(claim.paidAmount) - toFloat(claim.intimationReserve);
-
-        newObj.movement = 'YES';
-
-  }else if( claim.osBeginEstimate != undefined && claim.paidAmount != undefined && claim.osEndMonthEstimate != undefined){
-
-        newObj.difference = toFloat(claim.osEndMonthEstimate) + toFloat(claim.paidAmount) - toFloat(claim.osBeginEstimate);
-
-        newObj.movement = 'YES';
-
-  }else if(claim.osBeginEstimate == undefined && claim.paidAmount != undefined && claim.osEndMonthEstimate != undefined ){
-
-
-    newObj.difference = toFloat(claim.osEndMonthEstimate) - toFloat(claim.paidAmount);
-
-    newObj.movement = 'YES';
-                
-
-  }else if(claim.osBeginEstimate != undefined && claim.paidAmount == undefined && claim.osEndMonthEstimate != undefined){
-
-    newObj.difference = toFloat(claim.osEndMonthEstimate) - toFloat(claim.osBeginEstimate);
-
-    newObj.movement = 'YES';
-
-  }else if(claim.intimationReserve == undefined && claim.paidAmount != undefined && claim.osEndMonthEstimate != undefined){
-
-  newObj.difference = toFloat(claim.osEndMonthEstimate) - toFloat(claim.paidAmount);
-
-  newObj.movement = 'YES';
-
-  }else if(claim.intimationReserve != undefined && claim.paidAmount == undefined && claim.osEndMonthEstimate != undefined){
-
-
-    newObj.difference = toFloat(claim.osEndMonthEstimate) - toFloat(claim.intimationReserve);
-
-    newObj.movement = 'YES';
-    
-  }else if(claim.intimationReserve != undefined && claim.paidAmount != undefined && claim.osEndMonthEstimate == undefined){
-
-    newObj.difference = toFloat(claim.paidAmount) - toFloat(claim.intimationReserve);
-
-    newObj.movement = 'YES';
-
-  }else if(claim.osBeginEstimate != undefined && claim.paidAmount != undefined && claim.osEndMonthEstimate == undefined){
-
-    newObj.difference = toFloat(claim.paidAmount) - toFloat(claim.osBeginEstimate);
-
-    newObj.movement = 'YES';
-  }else{
-
-    newObj.movement = 'NO';
+  if (
+    claim.osBeginEstimate != undefined &&
+    claim.intimationReserve == undefined &&
+    claim.paidAmount == undefined &&
+    claim.osEndMonthEstimate == undefined
+  ) {
+    newObj.noClaim = "YES";
+    newObj.difference = claim.osBeginEstimate;
+  } else if (
+    claim.intimationReserve != undefined &&
+    claim.osBeginEstimate == undefined &&
+    claim.paidAmount == undefined &&
+    claim.osEndMonthEstimate == undefined
+  ) {
+    newObj.noClaim = "YES";
+    newObj.difference = claim.intimationReserve;
+  } else {
+    newObj.noClaim = "NO";
   }
 
- 
-
   return newObj;
+});
 
-}).filter(claim => claim.movement === 'YES' && claim.difference != 0);
+let combinedAllwithLabelsDuplicate = _.concat(
+  combinedAll,
+  newRevivedclaims,
+  newCalcMovement,
+  newClosedAsNoClaim
+);
 
+let combinedAllwithLabels = combinedAll
+  .map(claim => claim.claimNo)
+  .map(function(claimNo) {
+    let newObj = {};
 
+    combinedAllwithLabelsDuplicate.map(function(dupClaim) {
+      for (const prop in dupClaim) {
+        if (claimNo == dupClaim.claimNo) {
+          newObj[prop] = dupClaim[prop];
+        }
+      }
+    });
 
+    return newObj;
+  });
 
-// console.log("newClosedAsNoClaim summary", getSummary(newClosedAsNoClaim, 'difference'));
+let paidSettled = combinedAll
+  .map(function(claim) {
+    let newObj = {};
 
+    for (const prop in claim) {
+      newObj[prop] = claim[prop];
+    }
 
+    if (
+      claim.paidAmount != undefined &&
+      claim.osEndMonthEstimate == undefined
 
-// let combinedOsbeginIntimated = _.concat(osBeginMonth, intimated);
+    ) {
+      newObj.settled = "YES";
+    } else {
+      newObj.settled = "NO";
+    }
 
-// let paidNotInBeginingIntimated = _.differenceBy(payments, combinedOsbeginIntimated, 'claimNo');
-
-// let combinedpaidBeginingIntimatedEndOs = _.concat(osBeginMonth, intimated, osEndMonth);
-
-// let paidNotInBeginingIntimatedEndOs = _.differenceBy(paidNotInBeginingIntimated, osEndMonth, 'claimNo' );
-
-// let paidNotInBeginingIntimatedInEndOS = _.intersectionBy(paidNotInBeginingIntimated, osEndMonth, 'claimNO');
-
-// console.log("paidNotInBeginingIntimatedInEndOS", paidNotInBeginingIntimatedInEndOS);
-
-// total movement =   beginPaidMovement + intimatedEndOsMovement + intimatedPaidMovement + movementUpDown
-
-/*
-
-// combined sheet OS begining and end no dubplictes:
-
-// let combinedSheets = _
-//   .concat(
-//     addedOsEndFromBeginMonth,
-//     removedOsBeginToEndMonth,
-//     osRepeatedClaimNo,
-//     "claimNo"
-//   )
-//   .map(function(claim) {
-//     let newObj = {};
-//     for (const prop in claim) {
-//       newObj[prop] = claim[prop];
-//       if (claim.osEndMonthEstimate == null) {
-//         newObj.osEndMonthEstimate = 0;
-//       } else if (claim.osBeginEstimate == null) {
-//         newObj.osBeginEstimate = 0;
-//       }
-//     }
-
-//     return newObj;
-//   });
-
-let combined12 = _.concat(osBeginMonth, intimated);
+    return newObj;
+  })
+  .filter(claim => claim.settled === "YES");
 
 
-*/
+console.log("Paid settled summary ", getSummary(paidSettled, "paidAmount"));
+
 // summary sheets
 
 // let closedAsNoClaimSummary = getSummary(closedAsNoClaim, "osBeginEstimate");
@@ -971,7 +1055,11 @@ let combined12 = _.concat(osBeginMonth, intimated);
 
 //let totalMovementSummary = getSummary(totalMovementCombined, "difference");
 
-let totalMovementSummary = getSummary (newCalcMovement, 'difference');
+let oSbeginMonthSummary = getSummary(osBeginMonth, "osBeginEstimate");
+
+let oSEndMonthSummary = getSummary(osEndMonth, "osEndMonthEstimate");
+
+let totalMovementSummary = getSummary(newCalcMovement, "difference");
 
 let paidSummary = getSummary(payments, "paidAmount");
 
@@ -982,23 +1070,20 @@ let wb = XLSX.utils.book_new();
 
 // create sheetsNames
 wb.SheetNames.push(
-  "PAID SUMMARY",
+  "OS BEGIN SUMMARY",
   "INTIMATED SUMMARY",
+  "PAID SUMMARY",
+  "OS END SUMMARY",
   "MOVEMENT SUMMARY",
   "CLOSED AS NO CLAIM SUMMARY",
   "REVIVED CLAIMS SUMMARY",
-  "REMOVED CLAIMS",
-  "ADDED CLAIMS",
+  "ALL COMBINED SORTED",
+  "OS LAST MONTH CLAIMS",
+  "PAID CLAIMS",
+  "INTIMATED CLAIMS",
   "MOVEMENTS",
-  "REVIVED CLAIMS",
   "CLOSED AS NO CLAIM",
-  "CLAIMS IN LAST AND CURRENT OS",
-  "MOVED UP CLAIMS",
-  "MOVED DOWN CLAIMS",
-  "INT-OS END MOVEMENT",
-  "INT-PAID MOVEMENT",
-  "OS BEGIN-PAID MOVEMENT",
-  "ALL COMBINED SORTED"
+  "REVIVED CLAIMS"
 );
 
 let summaryHeader = {
@@ -1035,6 +1120,34 @@ let closedAsnoClaimHeader = {
   ]
 };
 
+let combinedAllHeader = {
+  header: [
+    "CLASS",
+    "POLICY NO",
+    "CLAIM NO",
+    "INSURED NAME",
+    "DATE REPORTED",
+    "DATE OF LOSS",
+    "PERIOD FROM",
+    "PERIOD TO",
+    "BEGINING OS ESTIMATE",
+    "INTIMATION RESERVE",
+    "PAID AMOUNT",
+    "END OS ESTIMATE",
+    "DIFFERENCE",
+    "REVIVED",
+    "MOVED",
+    "NO CLAIM",
+    "INSURED",
+    "AGENCY",
+    "DATE OF CHEQUE",
+    "CHEQUE NO",
+    "POLICY HOLDER",
+    "UW YEAR",
+    "PAYEE"
+  ]
+};
+
 let revivedHeader = {
   header: [
     "CLASS",
@@ -1049,40 +1162,28 @@ let revivedHeader = {
   ]
 };
 
-let wsTotalMovement = XLSX.utils.json_to_sheet(
-  toExcelSheet(newCalcMovement)
+let wsOsBeginMonthSummary = XLSX.utils.json_to_sheet(
+  toExcelSheet(oSbeginMonthSummary),
+  summaryHeader
 );
 
-// let wsIntimatedPaidMovement = XLSX.utils.json_to_sheet(
-//   toExcelSheet(intimatedPaidMovement)
-// );
-
-// let wsbeginPaidMovement = XLSX.utils.json_to_sheet(
-//   toExcelSheet(beginPaidMovementNoEndOS)
-// );
-
-// let wsRemovedOs = XLSX.utils.json_to_sheet(
-//   toExcelSheet(removedOsBeginToEndMonth)
-// );
-let wsAddedOs = XLSX.utils.json_to_sheet(toExcelSheet(totalClosedAsNoClaim));
-let wsCombinedOs = XLSX.utils.json_to_sheet(toExcelSheet(combinedAll));
-let wsRevivedOs = XLSX.utils.json_to_sheet(
-  toExcelSheet(revivedClaims),
-  revivedHeader
-);
-let wsClosedASNoClaim = XLSX.utils.json_to_sheet(
-  toExcelSheet(newClosedAsNoClaim),
-  closedAsnoClaimHeader
+let wsIntimatedSummary = XLSX.utils.json_to_sheet(
+  intimatedSummary,
+  summaryHeader
 );
 
-let wsInBeginingEnd = XLSX.utils.json_to_sheet(toExcelSheet(osRepeatedClaimNo));
+let wsPaidSummary = XLSX.utils.json_to_sheet(paidSummary, summaryHeader);
 
-
+let wsOsEndMonthSummary = XLSX.utils.json_to_sheet(
+  toExcelSheet(oSEndMonthSummary),
+  summaryHeader
+);
 
 let wsMovementSummary = XLSX.utils.json_to_sheet(
   totalMovementSummary,
   summaryHeader
 );
+
 let wsClosedAsNoClaimSummary = XLSX.utils.json_to_sheet(
   totalClosedAsNoClaimSummary,
   summaryHeader
@@ -1093,45 +1194,50 @@ let wsRevivedClaimSummary = XLSX.utils.json_to_sheet(
   summaryHeader
 );
 
-let wsPaidSummary = XLSX.utils.json_to_sheet(paidSummary, summaryHeader);
+let wsCombinedOs = XLSX.utils.json_to_sheet(
+  toExcelSheet(combinedAllwithLabels),
+  combinedAllHeader
+);
 
-let wsIntimatedSummary = XLSX.utils.json_to_sheet(
-  intimatedSummary,
-  summaryHeader
+let wsOsBeginMonth = XLSX.utils.json_to_sheet(toExcelSheet(osBeginMonth));
+
+let wsPayments = XLSX.utils.json_to_sheet(toExcelSheet(payments));
+
+let wsIntimatedClaims = XLSX.utils.json_to_sheet(toExcelSheet(intimated));
+
+let wsTotalMovement = XLSX.utils.json_to_sheet(toExcelSheet(newCalcMovement));
+
+let wsClosedASNoClaim = XLSX.utils.json_to_sheet(
+  toExcelSheet(totalClosedAsNoClaim),
+  closedAsnoClaimHeader
+);
+
+let wsRevivedOs = XLSX.utils.json_to_sheet(
+  toExcelSheet(revivedClaims),
+  revivedHeader
 );
 
 let wsheets = [
+  wsOsBeginMonthSummary,
+  wsIntimatedSummary,
+  wsPaidSummary,
+  wsOsEndMonthSummary,
   wsMovementSummary,
   wsClosedAsNoClaimSummary,
   wsRevivedClaimSummary,
-  wsPaidSummary,
-  wsAddedOs,
-  wsRevivedOs,
+  wsCombinedOs,
+  wsOsBeginMonth,
+  wsPayments,
+  wsIntimatedClaims,
   wsTotalMovement,
   wsClosedASNoClaim,
-  wsIntimatedSummary
+  wsRevivedOs
 ];
-
-// let wsheets = [
-//   wsMovementSummary,
-//   wsClosedAsNoClaimSummary,
-//   wsRevivedClaimSummary,
-//   wsPaidSummary,
-//   wsIntimatedSummary,
-//   wsRemovedOs,
-//   wsAddedOs,
-//   wsCombinedOs,
-//   wsRevivedOs,
-//
-//   wsInBeginingEnd,
-//   wsUpMovement,
-//   wsDownMovement
-// ];
 
 // formating of column widths
 
 wsheets.map(function(sheet, index) {
-  if (index < 6) {
+  if (index < 7) {
     sheet["!cols"] = [{ wch: 20 }, { wch: 10 }, { wch: 20 }];
     sheet.A1.s = {
       patternType: "solid",
@@ -1165,22 +1271,19 @@ wsheets.map(function(sheet, index) {
   };
 });
 
-wb.Sheets["PAID SUMMARY"] = wsPaidSummary;
+wb.Sheets["OS BEGIN SUMMARY"] = wsOsBeginMonthSummary;
 wb.Sheets["INTIMATED SUMMARY"] = wsIntimatedSummary;
+wb.Sheets["PAID SUMMARY"] = wsPaidSummary;
+wb.Sheets["OS END SUMMARY"] = wsOsEndMonthSummary;
 wb.Sheets["MOVEMENT SUMMARY"] = wsMovementSummary;
 wb.Sheets["CLOSED AS NO CLAIM SUMMARY"] = wsClosedAsNoClaimSummary;
 wb.Sheets["REVIVED CLAIMS SUMMARY"] = wsRevivedClaimSummary;
 wb.Sheets["ALL COMBINED SORTED"] = wsCombinedOs;
-wb.Sheets["ADDED CLAIMS"] = wsAddedOs;
+wb.Sheets["OS LAST MONTH CLAIMS"] = wsOsBeginMonth;
+wb.Sheets["PAID CLAIMS"] = wsPayments;
+wb.Sheets["INTIMATED CLAIMS"] = wsIntimatedClaims;
 wb.Sheets["MOVEMENTS"] = wsTotalMovement;
-// wb.Sheets["REMOVED CLAIMS"] = wsRemovedOs;
 wb.Sheets["CLOSED AS NO CLAIM"] = wsClosedASNoClaim;
-// wb.Sheets["CLAIMS IN LAST AND CURRENT OS"] = wsInBeginingEnd;
-// wb.Sheets["MOVED UP CLAIMS"] = wsUpMovement;
-// wb.Sheets["MOVED DOWN CLAIMS"] = wsDownMovement;
-// wb.Sheets["INT-OS END MOVEMENT"] = wsIntimatedEndOSmovement;
-// wb.Sheets["INT-PAID MOVEMENT"] = wsIntimatedPaidMovement;
-// wb.Sheets["OS BEGIN-PAID MOVEMENT"] = wsbeginPaidMovement;
 wb.Sheets["REVIVED CLAIMS"] = wsRevivedOs;
 
 XLSX.write(wb, { bookType: "xlsx", type: "binary" });

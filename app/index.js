@@ -82,7 +82,8 @@ let printToExcelKeysmap = {
   difference: "DIFFERENCE",
   revived: "REVIVED",
   movement: "MOVED",
-  noClaim: "NO CLAIM"
+  noClaim: "NO CLAIM",
+  settled: "SETTTLED"
 };
 
 // check sheet Fields
@@ -999,34 +1000,13 @@ let newClosedAsNoClaim = combinedAll.map(function(claim) {
   return newObj;
 });
 
-let combinedAllwithLabelsDuplicate = _.concat(
-  combinedAll,
-  newRevivedclaims,
-  newCalcMovement,
-  newClosedAsNoClaim
-);
-
-let combinedAllwithLabels = combinedAll
-  .map(claim => claim.claimNo)
-  .map(function(claimNo) {
-    let newObj = {};
-
-    combinedAllwithLabelsDuplicate.map(function(dupClaim) {
-      for (const prop in dupClaim) {
-        if (claimNo == dupClaim.claimNo) {
-          newObj[prop] = dupClaim[prop];
-        }
-      }
-    });
-
-    return newObj;
-  });
 
 let paidSettled = combinedAll
   .map(function(claim) {
     let newObj = {};
 
     for (const prop in claim) {
+      
       newObj[prop] = claim[prop];
     }
 
@@ -1045,7 +1025,35 @@ let paidSettled = combinedAll
   .filter(claim => claim.settled === "YES");
 
 
-console.log("Paid settled summary ", getSummary(paidSettled, "paidAmount"));
+
+let combinedAllwithLabelsDuplicate = _.concat(
+  combinedAll,
+  newRevivedclaims,
+  newCalcMovement,
+  newClosedAsNoClaim,
+  paidSettled
+);
+
+let combinedAllwithLabels = combinedAll
+  .map(claim => claim.claimNo)
+  .map(function(claimNo) {
+    let newObj = {};
+
+    combinedAllwithLabelsDuplicate.map(function(dupClaim) {
+      for (const prop in dupClaim) {
+        if (claimNo == dupClaim.claimNo) {
+          newObj[prop] = dupClaim[prop];
+        }
+      }
+    });
+
+    return newObj;
+  });
+
+
+
+
+paidSettledSummary = getSummary(paidSettled, "paidAmount");
 
 // summary sheets
 
@@ -1073,6 +1081,7 @@ wb.SheetNames.push(
   "OS BEGIN SUMMARY",
   "INTIMATED SUMMARY",
   "PAID SUMMARY",
+  "PAID AND SETTLED SUMMARY",
   "OS END SUMMARY",
   "MOVEMENT SUMMARY",
   "CLOSED AS NO CLAIM SUMMARY",
@@ -1174,6 +1183,8 @@ let wsIntimatedSummary = XLSX.utils.json_to_sheet(
 
 let wsPaidSummary = XLSX.utils.json_to_sheet(paidSummary, summaryHeader);
 
+let  wsPaidSettledSummary = XLSX.utils.json_to_sheet(paidSettledSummary, summaryHeader);
+
 let wsOsEndMonthSummary = XLSX.utils.json_to_sheet(
   toExcelSheet(oSEndMonthSummary),
   summaryHeader
@@ -1221,6 +1232,7 @@ let wsheets = [
   wsOsBeginMonthSummary,
   wsIntimatedSummary,
   wsPaidSummary,
+  wsPaidSettledSummary,
   wsOsEndMonthSummary,
   wsMovementSummary,
   wsClosedAsNoClaimSummary,
@@ -1274,6 +1286,7 @@ wsheets.map(function(sheet, index) {
 wb.Sheets["OS BEGIN SUMMARY"] = wsOsBeginMonthSummary;
 wb.Sheets["INTIMATED SUMMARY"] = wsIntimatedSummary;
 wb.Sheets["PAID SUMMARY"] = wsPaidSummary;
+wb.Sheets["PAID AND SETTLED SUMMARY"]= wsPaidSettledSummary;
 wb.Sheets["OS END SUMMARY"] = wsOsEndMonthSummary;
 wb.Sheets["MOVEMENT SUMMARY"] = wsMovementSummary;
 wb.Sheets["CLOSED AS NO CLAIM SUMMARY"] = wsClosedAsNoClaimSummary;
@@ -1306,10 +1319,6 @@ XlsxPopulate.fromFileAsync("./tmp/Unstyled Report.xlsx")
 
 // TODO: separate code into modules.
 
-//TODO: change formating of values to end sheets
-
-// TODO: remove difference col in CLAIMS IN LAST AND CURRENT OS
-//TODO: remove empty  row on sheets
 
 /*  Insurance Classes 
 

@@ -6,7 +6,8 @@ node_modules/
 #any sensitive excel data
 *.xls
 *.xlsx
-source file/
+app/source file/
+app/tmp/
 
 #lock file
 package-lock.json

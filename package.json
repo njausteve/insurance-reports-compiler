@@ -9,19 +9,21 @@
   },
   "keywords": [
     "Insurance",
-    "javascript", "electron"
+    "javascript",
+    "electron"
   ],
   "author": "@njausteve",
   "license": "ISC",
   "dependencies": {
     "del": "^3.0.0",
+    "electron": "^2.0.2",
+    "electron-reload": "^1.2.2",
     "lodash": "^4.17.10",
     "object-rename-keys": "^1.2.1",
     "xlsx": "^0.12.13",
     "xlsx-populate": "^1.17.0"
   },
   "devDependencies": {
-    "electron-prebuilt": "^1.4.13",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.12.0",
     "eslint-plugin-node": "^6.0.1",

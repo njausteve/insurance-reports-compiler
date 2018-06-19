@@ -3,29 +3,64 @@
 
         var walkthrough;
 
-        $('#file').on('change', function () {
+        let fileName, directoryName;
 
-            var fileName = this.files[0].name;
+        const {
+            dialog
+        } = require('electron').remote;
 
-            if (this.files.length > 0) {
 
-                $('.walkthrough').css({
-                    'height': '490px',
-                    'transition': 'height .35s ease-in-out'
-                });
-                $('.selected-file')
-                    .html(fileName)
-                    .css({
-                        'font-size': '1em',
-                        'color': 'rgb(247, 208, 6'
+        $('.directory').click(function () {
+            dialog.showOpenDialog({
+                properties: ['openDirectory']
+            }, selectedDirectory => {
+                if (selectedDirectory != undefined) {
+                    directoryName = selectedDirectory;
+                    $('.directory').html(directoryName).css({
+                        'font-weight': '200',
+                        color: 'black',
+                        border: '1px solid white',
+                        transition: 'all 1.6s  cubic-bezier(0.25, 0.8, 0.25, 1)'
                     });
 
-            }
+                }
+
+            });
+        });
+
+
+        $('.file').click(function () {
+            dialog.showOpenDialog({
+                filters: [{
+                    name: 'Excel file',
+                    extensions: ['xlsx']
+                }]
+            }, selectedFile => {
+                if (selectedFile != undefined) {
+                    fileName = selectedFile;
+                    $('.file').html(selectedFile).css({
+                        'font-weight': '200',
+                        color: 'black',
+                        border: '1px solid white',
+                        transition: 'all 1.6s  cubic-bezier(0.25, 0.8, 0.25, 1)'
+                    });
+                }
+            });
+        });
+
+ 
+        $('.check-errors').click(function () {
+
+             alert(fileName);
+
+            
 
         });
 
 
+
         walkthrough = {
+
             index: 0,
             nextScreen: function () {
                 if (this.index < this.indexMax()) {
@@ -77,20 +112,20 @@
                 $('.walkthrough, .shade').removeClass('reveal');
                 return setTimeout((() => {
                     $('.walkthrough, .shade').removeClass('show');
+                    $('.file-selector').addClass('show');
                     this.index = 0;
                     return this.updateScreen();
                 }), 200);
             },
             openModal: function () {
                 $('.walkthrough, .shade').addClass('show');
+
                 setTimeout((() => {
                     return $('.walkthrough, .shade').addClass('reveal');
                 }), 200);
                 return this.updateScreen();
             }
         };
-
-
 
         $('.next-screen').click(function () {
             return walkthrough.nextScreen();
@@ -104,7 +139,9 @@
         $('.open-walkthrough').click(function () {
             return walkthrough.openModal();
         });
+
         walkthrough.openModal();
+
 
         // Optionally use arrow keys to navigate walkthrough
         return $(document).keydown(function (e) {
@@ -130,8 +167,6 @@
             }
             e.preventDefault();
         });
-
-
 
     });
 

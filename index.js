@@ -88,7 +88,8 @@ let printToExcelKeysmap = {
 
 // check sheet Fields
 
-function checkSheetFields() {
+exports.checkSheetFields = function() {
+
   let status = [];
 
   if (sheets.length < 4) {
@@ -132,9 +133,9 @@ function checkSheetFields() {
   }
 
   return status;
-}
+};
 
-console.log(checkSheetFields());
+// console.log(checkSheetFields());
 
 // assignment
 

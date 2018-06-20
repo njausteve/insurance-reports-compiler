@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title></title>
     <link rel="stylesheet" type="text/css" href="./assets/css/onboard.css">
+    <link rel="stylesheet" href="./assets/css/jquery.loadingModal.min.css">
 </head>
 
 <body>
@@ -30,26 +31,25 @@
                         <p class="text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore
                             et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
                         </p>
-                        <div class="custom-file-upload">
+                        <div class="custom-file-upload ">
 
                             <h4>Directory where excel file will be saved</h4>
 
-                            <button class="directory">Select excel file</button>
-                          
+                            <button class="directory">Select location</button>
+
+                            <p class="dir-error"></p>
+
                         </div>
 
                         <h4>Select Excel File</h4>
 
-                        <div class="custom-file-upload">
-
+                        <div class="custom-file-upload file-select">
                             <button class="file">Select excel file</button>
-                           
+
+                            <p class="file-error"></p>
                         </div>
 
-
                     </div>
-
-
                     <div class="footer">
                         <button class="button check-errors">Next</button>
                         <!-- <button class="button finish close" disabled="">Finish</button> -->
@@ -221,6 +221,9 @@
 
     <script>
         window.$ = window.jQuery = require('./assets/js/vendor/jquery.min');
+    </script>
+    <script>
+        require('./assets/js/vendor/jquery.loadingModal.min')
     </script>
     <script>
         require('./assets/js/onboard')

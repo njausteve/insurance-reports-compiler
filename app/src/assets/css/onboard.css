@@ -519,6 +519,15 @@ body {
   cursor: pointer;
 }
 
+
+.file-selector .error{
+
+    color: black;
+    font-size: 1.2em;
+    font-weight: 200;
+
+}
+
 .file-selector .finish{
       background: #3e94f5;
       position: absolute;
@@ -535,4 +544,49 @@ body {
 .show {
   display: flex;
   opacity: 1;
+}
+
+.hide{
+
+   display: none; 
+   /* visibility: hidden; */
+  
+}
+
+
+
+.dir-error, .file-error{
+
+   color: black;
+   font-size: 1em;
+   font-style: italic;
+}
+
+
+@keyframes shake {
+  from,
+  to {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    -webkit-transform: translate3d(-10px, 0, 0);
+    transform: translate3d(-10px, 0, 0);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    -webkit-transform: translate3d(10px, 0, 0);
+    transform: translate3d(10px, 0, 0);
+  }
+}
+
+.shake {
+  -webkit-animation-name: shake;
+  animation-name: shake;
 }

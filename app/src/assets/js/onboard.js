@@ -36,7 +36,6 @@
 
         function checkExcelFile() {
 
-            console.log("checkExcelFile hit");
 
             FileCheckstatus = app.passFileNameForLoading(fileName);
 
@@ -133,7 +132,6 @@
 
         $(".check-errors").click(() => {
 
-
             if (fileName === undefined) {
 
                 $(".guide-body").css({
@@ -183,6 +181,7 @@
             reload();
         });
 
+       
         walkthrough = {
             index: 0,
             nextScreen: function () {

@@ -571,6 +571,11 @@ body {
   font-style: italic;
 }
 
+.check-finish a{
+    color: white;
+    text-decoration: none;
+}
+
 .to-instructions {
   position: absolute;
   bottom: 100px;

@@ -19,7 +19,7 @@
         <div class="container">
 
             <div class="file-selector-body">
-                <div class="guide">
+                <div class="guide file-check-prompt">
                     <div class="guide-body">
                         <div class="media">
                             <img class='icon' src='./assets/images/excel.svg'>
@@ -52,6 +52,29 @@
                     </div>
                     <div class="footer">
                         <button class="button check-errors">Next</button>
+                        <!-- <button class="button finish close" disabled="">Finish</button> -->
+                    </div>
+
+                </div>
+
+                <!-- filecheck error/success follow up  -->
+                <div class="guide check-result hide">
+                    <div class="guide-body ">
+                        <div class="media">
+                            <img class='icon success shake hide' src='./assets/images/success.svg'>
+                            <img class='icon failed shake hide' src='./assets/images/warning.svg'>
+                        </div>
+                        <p>
+                            Lorem ipsum dolor, sit amet consectetur adipisicing elit. Voluptas deserunt aspernatur dolores iure, ratione possimus labore ipsam repellat delectus pariatur. Beatae quaerat quasi odit quam nulla ab cumque maxime fugiat!
+                        </p>
+                        <h3></h3>
+                        <ul></ul>
+                    </div>
+                    <div class="footer">
+                        <button class="button check-finish hide">Finish</button>
+                        <button class="button check-again hide">check again</button>
+
+                        
                         <!-- <button class="button finish close" disabled="">Finish</button> -->
                     </div>
 
@@ -218,6 +241,8 @@
             <button class='button finish close' disabled='true'>Finish</button>
         </div>
     </div>
+
+     <p class='to-instructions hide' >read instructions again</p>
 
     <script>
         window.$ = window.jQuery = require('./assets/js/vendor/jquery.min');

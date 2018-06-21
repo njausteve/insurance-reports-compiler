@@ -119,7 +119,8 @@ checkSheetFields = function() {
   if (sheets.length < 4) {
     status.push({
       sheet: "no sheets",
-      error: "one or more sheets are missing"
+      status: 'error',
+      message: "one or more sheets are missing"
     });
   } else {
     let sheetName = "";
@@ -145,7 +146,8 @@ checkSheetFields = function() {
         if (!keysMap.hasOwnProperty(prop)) {
           status.push({
             sheet: sheetName,
-            error: `column name is mispelled or missing *${prop}*`
+            status: 'error',
+            message: `column name is mispelled or missing *${prop}*`
           });
         }
       }
@@ -153,7 +155,7 @@ checkSheetFields = function() {
   }
 
   if (status.length < 1) {
-    status.push({ sheet: "all", message: "all sheets OKAY" });
+    status.push({ status: 'success', sheet: "all", message: "all sheets are OKAY" });
   }
 
  

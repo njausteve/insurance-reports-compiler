@@ -435,15 +435,12 @@ body {
 }
 
 .file-selector .container {
-  
   list-style-type: none;
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  
 }
 
-.file-selector .guide-body{
-
-   padding: 50px;
+.file-selector .guide-body {
+  padding: 50px;
 }
 
 .file-selector .guide {
@@ -457,6 +454,7 @@ body {
   transform: translateX(0) scale(1);
   transition-delay: 0.4s;
 }
+
 .file-selector .media {
   background: rgba(255, 255, 255, 0.25);
   border-radius: 50%;
@@ -464,10 +462,11 @@ body {
   margin: 32px auto;
   width: 160px;
 }
+
 .file-selector .icon {
-      opacity: 1;
-      transform: scale(1);
-      transition-delay: 0.6s;
+  opacity: 1;
+  transform: scale(1);
+  transition-delay: 0.6s;
 }
 
 .file-selector h3 {
@@ -476,6 +475,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.15em;
 }
+
 .file-selector .text {
   line-height: 1.6em;
   font-size: 16px;
@@ -484,8 +484,6 @@ body {
   color: rgba(255, 255, 255, 0.8);
 }
 
-
-
 .file-selector .file-selector-body {
   align-items: center;
   display: flex;
@@ -493,14 +491,14 @@ body {
   text-align: center;
 }
 
-.file-selector .footer{
-      display: flex;
-      flex: 0 0 auto;
-      justify-content: space-around;
-      padding: 0;
+.file-selector .footer {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: space-around;
+  padding: 0;
 }
 
-.file-selector .footer button{
+.file-selector .footer button {
   height: 40px;
   border: 0;
   background: #5da3f2;
@@ -514,54 +512,75 @@ body {
   margin: 0;
   outline: 0;
   padding: 12px;
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
-  background 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: pointer;
 }
 
-
-.file-selector .error{
-
-    color: black;
-    font-size: 1.2em;
-    font-weight: 200;
-
+.file-selector ul {
+  list-style: none;
+  margin: 0;
+  text-align: left;
 }
 
-.file-selector .finish{
-      background: #3e94f5;
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 100%;
-      opacity: 0;
-      transform: scale(0, 1);
-      transform-origin: center;
-      transition: opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
-      background 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
-      transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+.file-selector .error-message img {
+  height: 30px;
+  width: 30px;
+  padding: 0 20px;
+  float: left;
+  transform: translateY(-5px);
 }
+
+.file-selector .error-message {
+  color: white;
+  font-size: 1em;
+  line-height: 1.4em;
+  text-transform: uppercase;
+}
+
+.file-selector .error {
+  color: black;
+  font-size: 1.2em;
+  font-weight: 200;
+}
+
+.file-selector .finish {
+  background: #3e94f5;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  opacity: 0;
+  transform: scale(0, 1);
+  transform-origin: center;
+  transition: opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
 .show {
   display: flex;
   opacity: 1;
 }
 
-.hide{
-
-   display: none; 
-   /* visibility: hidden; */
-  
+.hide {
+  display: none;
 }
 
-
-
-.dir-error, .file-error{
-
-   color: black;
-   font-size: 1em;
-   font-style: italic;
+.dir-error,
+.file-error {
+  color: black;
+  font-size: 1em;
+  font-style: italic;
 }
 
+.to-instructions {
+  position: absolute;
+  bottom: 100px;
+  color: #929090;
+  cursor: pointer;
+}
+
+.to-instructions:hover {
+  color: rgba(88, 88, 88, 0.98);
+}
 
 @keyframes shake {
   from,
@@ -589,4 +608,23 @@ body {
 .shake {
   -webkit-animation-name: shake;
   animation-name: shake;
+}
+
+@media screen and (min-width: 600px) {
+  .file-selector ul {
+    padding: 10px 10px;
+  }
+}
+
+@media screen and (min-width: 1140px) {
+  .file-selector ul {
+    padding: 10px 50px;
+    padding-left: 15%;
+  }
+}
+
+@media screen and (min-width: 1420px) {
+  .file-selector ul {
+    padding-left: 20%;
+  }
 }

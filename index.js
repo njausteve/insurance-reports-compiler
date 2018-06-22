@@ -1299,7 +1299,10 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       type: "binary"
     });
 
-    del.sync(["./app/tmp/*.xlsx", `${reportDestination.toString()}/Final Report.xlsx`]);
+    let fileName = path.basename(sourcefile.toString(), '.xlsx');
+    let finalReport = `${reportDestination.toString()}/Final Report (${fileName}).xlsx`;
+
+    del.sync(["./app/tmp/*.xlsx"]);
 
     XLSX.writeFile(wb, "./app/tmp/Unstyled Report.xlsx");
 
@@ -1316,13 +1319,10 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
         });
 
 
-        console.log("reportDestination is ====> ", `${reportDestination.toString()}/Final Report.xlsx`);
-
-        return otherWorkBook.toFileAsync(`${reportDestination.toString()}/Final Report.xlsx`);
+        return otherWorkBook.toFileAsync(finalReport);
       })
       .catch(err => {
-        console.error(err);
-        reject(error);
+        reject({error: err.message});
       });
 
 
@@ -1343,6 +1343,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
        claimData.movementSummary = totalMovementSummary;
        claimData.closedAsNoClaimSummary = totalClosedAsNoClaimSummary;
        claimData.revivedSummary = totalRevivedSummary;
+       claimData.outputFile = finalReport;
 
 
       resolve(claimData);

@@ -27,7 +27,7 @@ electron: require(`${__dirname}/node_modules/electron`)
     // Emitted when the window is closed.
     win.on('closed', () => {
   
-      win = null
+      win = null;
     });
   }
   

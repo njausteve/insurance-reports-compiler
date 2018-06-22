@@ -2,30 +2,29 @@
     $(document).ready(function () {
         var walkthrough;
 
-        var fileName, directoryName, FileCheckstatus;
-
+        let fileName, directoryName, FileCheckstatus;
+        let reporter = require("../../../../index");
+        let checker = require("../../../../checkfile");
         let fs = require("fs");
+
+        let dataPromise;
 
         const {
             dialog,
             getCurrentWindow
         } = require("electron").remote;
 
-
-
-        let app = require("../../../../index");
-
         let reload = () => {
             getCurrentWindow().reload();
         };
 
-        function showloader() {
+        function showloader(textToDisplay) {
             return $("body").loadingModal({
                 color: "#000",
                 opacity: "0.95",
                 backgroundColor: "#dcdcde",
                 animation: "threeBounce",
-                text: "checking excel files"
+                text: textToDisplay
             });
         }
 
@@ -33,51 +32,67 @@
             return $("body").loadingModal("destroy");
         }
 
+        let runCalculations = function () {
+
+            return reporter.runCalculationsFromIndex(fileName, directoryName);
+
+            // .then((result) => {
+
+            //     console.log(result);
+
+            //     closeLoader();
+
+            //     // alert("we are done");
+            // }).catch((err) => {
+
+            //     console.log(err);
+            //     console.log('Error ALERT');
+
+            //     closeLoader();
+            //     // alert("we have an Error");
+
+            // });
+        };
 
         function checkExcelFile() {
-
-
-            FileCheckstatus = app.passFileNameForLoading(fileName);
-
+            FileCheckstatus = checker.passFileNameForLoading(fileName);
 
             if (FileCheckstatus !== undefined) {
-
                 $(".file-check-prompt").hide();
                 $(".check-result, .check-finish").show();
 
-
-                if (FileCheckstatus[0].status === 'success') {
-
-
-                    $('.check-result  h3').text(FileCheckstatus[0].message.toUpperCase());
+                if (FileCheckstatus[0].status === "success") {
+                    $(".check-result  h3").text(FileCheckstatus[0].message.toUpperCase());
                     $(".success, .check-result, .check-finish").show();
                     $(".failed, .check-again, .to-instructions").hide();
                     $("li").remove();
 
                 } else {
-
                     $(".failed, .check-again, .to-instructions").show();
                     $("li").remove();
-                    $('.check-finish ').hide();
+                    $(".check-finish ").hide();
 
                     FileCheckstatus.map(error => {
-
-                        $('.check-result ul').append(
-                            $('<li>').append(
-                                $('<p>').attr('class', 'error-message').append(
-                                    $('<img src="./assets/images/delete.svg" class = "error-icon shake">')
-                                ).append(` ${error.message} in ${error.sheet} sheet`)));
-
+                        $(".check-result ul").append(
+                            $("<li>").append(
+                                $("<p>")
+                                .attr("class", "error-message")
+                                .append(
+                                    $(
+                                        '<img src="./assets/images/delete.svg" class = "error-icon shake">'
+                                    )
+                                )
+                                .append(` ${error.message} in ${error.sheet} sheet`)
+                            )
+                        );
                     });
 
                 }
-
                 closeLoader();
             }
         }
 
         function initCheckFile() {
-
             setTimeout(checkExcelFile, 2000);
         }
 
@@ -131,57 +146,82 @@
         });
 
         $(".check-errors").click(() => {
-
             if (fileName === undefined) {
-
                 $(".guide-body").css({
                     "padding-bottom": "10px"
                 });
 
-                $(".file-error").text("source file not slected").show().addClass("shake");
-
+                $(".file-error")
+                    .text("source file not slected")
+                    .show()
+                    .addClass("shake");
             }
             if (directoryName === undefined) {
-
                 $(".guide-body").css({
                     "padding-bottom": "10px"
                 });
-                $(".dir-error").text("Destination folder is not selected").show().addClass("shake");
-
+                $(".dir-error")
+                    .text("Destination folder is not selected")
+                    .show()
+                    .addClass("shake");
             }
 
             if (directoryName !== undefined && fileName !== undefined) {
-
-                showloader();
+                showloader("checking Excel file");
                 initCheckFile();
 
+                console.log("this inside chech errors", this);
             }
         });
 
         $(".check-again").click(() => {
-
             fileName = undefined;
             directoryName = undefined;
             FileCheckstatus = undefined;
 
             $(".check-result").fadeOut("30000", () => {
-
                 $(".directory").html("Select location");
-                $(".file")
-                    .html('Select excel file');
+                $(".file").html("Select excel file");
                 $(".file-check-prompt").fadeIn("600000");
-
-
             });
-
         });
 
-
-        $('.to-instructions').click(() => {
+        $(".to-instructions").click(() => {
             reload();
         });
 
-       
+        $(".check-finish").click(function () {
+
+            showloader("getting your reports ready");
+
+            // $(location).attr('href', '../../app/src/components/dashboard.html');
+
+            console.log("part 1");
+
+            setTimeout(function () {
+
+                runCalculations()
+                    .then((result) => {
+
+                        console.log(result);
+
+                        closeLoader();
+
+                        // alert("we are done");
+                    }).catch((err) => {
+
+                        console.log(err);
+                        console.log('Error ALERT');
+
+                        closeLoader();
+                        // alert("we have an Error");
+
+                    });
+
+            }, 1000);
+
+        });
+
         walkthrough = {
             index: 0,
             nextScreen: function () {

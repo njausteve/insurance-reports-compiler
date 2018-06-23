@@ -1,5 +1,6 @@
 (function () {
     $(document).ready(function () {
+
         var walkthrough;
 
         let fileName, directoryName, FileCheckstatus;
@@ -7,23 +8,52 @@
         let checker = require("../../../../checkfile");
         let fs = require("fs");
 
-        let dataPromise;
+        const storage = require('electron-json-storage');
 
+        let claimData, claimError;
+
+         const {
+             shell
+         } = require('electron');
         const {
             dialog,
             getCurrentWindow
         } = require("electron").remote;
 
+       
         let reload = () => {
             getCurrentWindow().reload();
         };
 
-        function showloader(textToDisplay) {
+        function notify() {
+
+            let myNotification = new Notification('Final report', {
+                // body: `${claimData.outputFileName} geneted and stored in ${claimData.outputFilePath}`,
+                icon: '../src/assets/images/excel.png',
+                image: '../src/assets/images/excel.png',
+            });
+            myNotification.onclick = () => {
+
+                shell.showItemInFolder(claimData.outputFilePath);
+            };
+
+        }
+
+
+        function createStorage() {
+
+            return storage.clear(function (error) {
+                if (error) throw error;
+            });
+
+        }
+
+        function showloader(textToDisplay, animation) {
             return $("body").loadingModal({
                 color: "#000",
                 opacity: "0.95",
                 backgroundColor: "#dcdcde",
-                animation: "threeBounce",
+                animation: animation,
                 text: textToDisplay
             });
         }
@@ -36,22 +66,6 @@
 
             return reporter.runCalculationsFromIndex(fileName, directoryName);
 
-            // .then((result) => {
-
-            //     console.log(result);
-
-            //     closeLoader();
-
-            //     // alert("we are done");
-            // }).catch((err) => {
-
-            //     console.log(err);
-            //     console.log('Error ALERT');
-
-            //     closeLoader();
-            //     // alert("we have an Error");
-
-            // });
         };
 
         function checkExcelFile() {
@@ -93,7 +107,11 @@
         }
 
         function initCheckFile() {
+
+            createStorage();
+
             setTimeout(checkExcelFile, 2000);
+
         }
 
         $(".directory").click(() => {
@@ -109,7 +127,7 @@
                                 "font-weight": "200",
                                 color: "black",
                                 border: "1px solid white",
-                                transition: "all 1.6s  cubic-bezier(0.25, 0.8, 0.25, 1)"
+                                transition: "all 1.6s  ease-out"
                             });
 
                         $(".dir-error").fadeOut("slow");
@@ -146,6 +164,7 @@
         });
 
         $(".check-errors").click(() => {
+
             if (fileName === undefined) {
                 $(".guide-body").css({
                     "padding-bottom": "10px"
@@ -167,10 +186,9 @@
             }
 
             if (directoryName !== undefined && fileName !== undefined) {
-                showloader("checking Excel file");
+                showloader("checking Excel file", "threeBounce");
                 initCheckFile();
 
-                console.log("this inside chech errors", this);
             }
         });
 
@@ -192,33 +210,47 @@
 
         $(".check-finish").click(function () {
 
-            showloader("getting your reports ready");
+            showloader("getting your report ready", "wave");
 
             // $(location).attr('href', '../../app/src/components/dashboard.html');
 
-            console.log("part 1");
-
             setTimeout(function () {
+
 
                 runCalculations()
                     .then((result) => {
 
-                        console.log(result);
+                        claimData = result;
 
-                        closeLoader();
+                        if (claimData !== undefined) {
 
-                        // alert("we are done");
+                            closeLoader();
+
+                            storage.set('data', claimData, function (error) {
+                                if (error) throw error;
+
+                                notify();
+
+                                $(location).attr('href', '../../app/src/components/dashboard.html');
+
+                            });
+
+
+
+                        }
+
+
                     }).catch((err) => {
 
-                        console.log(err);
-                        console.log('Error ALERT');
+                        claimError = err;
+
+                        console.log(claimError);
 
                         closeLoader();
-                        // alert("we have an Error");
 
                     });
 
-            }, 1000);
+            }, 500);
 
         });
 

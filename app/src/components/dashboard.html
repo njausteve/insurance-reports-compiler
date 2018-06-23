@@ -20,11 +20,12 @@
     <!-- CSS Just for demo purpose, don't include it in your project -->
     <!-- <link href="../assets/assets-for-demo/demo.css" rel="stylesheet" /> -->
     <!-- iframe removal -->
+
 </head>
 
 <body class="">
     <div class="wrapper">
-<div class="sidebar" data-color="azure" data-background-color="white" data-image="">
+        <div class="sidebar" data-color="azure" data-background-color="white" data-image="">
             <!--
         Tip 1: You can change the color of the sidebar using: data-color="purple | azure | green | orange | danger"
 
@@ -100,15 +101,17 @@
                         </a>
                     </li>
                     <li class="nav-item exit">
-                        <a class="nav-link" href="">  
-                            <button><p>combined claims</p></button>
+                        <a class="nav-link" href="">
+                            <button>
+                                <p>combined claims</p>
+                            </button>
                         </a>
                     </li>
-                    
+
                 </ul>
             </div>
         </div>
-<div class="main-panel" >
+        <div class="main-panel">
             <!-- Navbar -->
             <nav class="navbar navbar-expand-lg navbar-transparent  navbar-absolute fixed-top">
                 <div class="container-fluid">
@@ -122,7 +125,7 @@
                         <span class="navbar-toggler-icon icon-bar"></span>
                         <span class="navbar-toggler-icon icon-bar"></span>
                     </button>
-                 
+
                 </div>
             </nav>
             <!-- End Navbar -->
@@ -133,14 +136,14 @@
                             <div class="card card-stats">
                                 <div class="card-header card-header-warning card-header-icon">
                                     <div class="card-icon">
-                    <!-- <i class="material-icons">content_copy</i> -->
-                    <h4>INTIMATED</h4>
+                                        <!-- <i class="material-icons">content_copy</i> -->
+                                        <h4>INTIMATED</h4>
                                     </div>
                                     <p class="card-category" style="font-weight: bold;">CLASS :
                                         <span>AMOUNT</span>
                                         <span> COUNT </span>
                                     </p>
-                        
+
                                 </div>
                                 <div class="card-footer">
                                     <div class="stats">
@@ -197,8 +200,8 @@
                                 </div>
                             </div>
                         </div>
-                    </div> 
-                   
+                    </div>
+
                     <div class="row">
 
                         <div class="col-lg-4 col-md-12">
@@ -461,10 +464,33 @@
 <!--   Core JS Files   -->
 <script>
     window.$ = window.jQuery = require('../assets/js/vendor/jquery.min');
-    
 </script>
+
+
+
+
+
+
 <script src="../assets/js/vendor/popper.min.js"></script>
 <script src="../assets/js/vendor/bootstrap-material-design.js"></script>
 <script src="../assets/js/vendor/material-dashboard.js"></script>
+
+
+<script>
+    const storage = require('electron-json-storage');
+
+const { shell } = require('electron');
+    let claimData;
+
+
+    storage.get('data', function (error, data) {
+
+        if (error) throw error;
+
+        claimData = data;
+
+
+    });
+</script>
 
 </html>

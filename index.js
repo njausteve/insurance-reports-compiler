@@ -1300,7 +1300,9 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
     });
 
     let fileName = path.basename(sourcefile.toString(), '.xlsx');
-    let finalReport = `${reportDestination.toString()}/Final Report (${fileName}).xlsx`;
+     let finalReportName = `Final Report (${fileName}).xlsx`;
+     let finalReportPath = `${reportDestination.toString()}/${finalReportName}`;
+
 
     del.sync(["./app/tmp/*.xlsx"]);
 
@@ -1319,7 +1321,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
         });
 
 
-        return otherWorkBook.toFileAsync(finalReport);
+        return otherWorkBook.toFileAsync(finalReportPath);
       })
       .catch(err => {
         reject({error: err.message});
@@ -1343,7 +1345,8 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
        claimData.movementSummary = totalMovementSummary;
        claimData.closedAsNoClaimSummary = totalClosedAsNoClaimSummary;
        claimData.revivedSummary = totalRevivedSummary;
-       claimData.outputFile = finalReport;
+       claimData.outputFilePath = finalReportPath;
+       claimData.outputFileName = finalReportName;
 
 
       resolve(claimData);

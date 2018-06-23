@@ -401,7 +401,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       TOTAL: toCurrency(sumTotal)
     });
 
-    return summary;
+    return _.sortBy(summary, 'CLASS');
   }
 
   return new Promise(function (resolve, reject) {

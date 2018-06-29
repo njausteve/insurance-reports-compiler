@@ -8,42 +8,31 @@
         let checker = require("../../../../checkfile");
         let fs = require("fs");
 
-        const storage = require('electron-json-storage');
+        const storage = require("electron-json-storage");
 
         let claimData, claimError;
 
-         const {
-             shell
-         } = require('electron');
+        const {
+            shell
+        } = require("electron");
         const {
             dialog,
             getCurrentWindow
         } = require("electron").remote;
 
-       
+
         let reload = () => {
             getCurrentWindow().reload();
         };
 
-        function notify() {
-
-            let myNotification = new Notification('Final report', {
-                // body: `${claimData.outputFileName} geneted and stored in ${claimData.outputFilePath}`,
-                icon: '../src/assets/images/excel.png',
-                image: '../src/assets/images/excel.png',
-            });
-            myNotification.onclick = () => {
-
-                shell.showItemInFolder(claimData.outputFilePath);
-            };
-
-        }
 
 
         function createStorage() {
 
             return storage.clear(function (error) {
-                if (error) throw error;
+                if (error) {
+                    throw error;
+                }
             });
 
         }
@@ -90,13 +79,13 @@
                         $(".check-result ul").append(
                             $("<li>").append(
                                 $("<p>")
-                                .attr("class", "error-message")
-                                .append(
-                                    $(
-                                        '<img src="./assets/images/delete.svg" class = "error-icon shake">'
+                                    .attr("class", "error-message")
+                                    .append(
+                                        $(
+                                            "<img src=\"./assets/images/delete.svg\" class = \"error-icon shake\">"
+                                        )
                                     )
-                                )
-                                .append(` ${error.message} in ${error.sheet} sheet`)
+                                    .append(` ${error.message} in ${error.sheet} sheet`)
                             )
                         );
                     });
@@ -116,50 +105,50 @@
 
         $(".directory").click(() => {
             dialog.showOpenDialog({
-                    properties: ["openDirectory"]
-                },
-                selectedDirectory => {
-                    if (selectedDirectory !== undefined) {
-                        directoryName = selectedDirectory;
-                        $(".directory")
-                            .html(directoryName)
-                            .css({
-                                "font-weight": "200",
-                                color: "black",
-                                border: "1px solid white",
-                                transition: "all 1.6s  ease-out"
-                            });
+                properties: ["openDirectory"]
+            },
+            selectedDirectory => {
+                if (selectedDirectory !== undefined) {
+                    directoryName = selectedDirectory;
+                    $(".directory")
+                        .html(directoryName)
+                        .css({
+                            "font-weight": "200",
+                            color: "black",
+                            border: "1px solid white",
+                            transition: "all 1.6s  ease-out"
+                        });
 
-                        $(".dir-error").fadeOut("slow");
-                    }
+                    $(".dir-error").fadeOut("slow");
                 }
+            }
             );
         });
 
         $(".file").click(() => {
             dialog.showOpenDialog({
-                    filters: [{
-                        name: "Excel file",
-                        extensions: ["xlsx"]
-                    }]
-                },
-                selectedFile => {
-                    if (selectedFile !== undefined) {
-                        fileName = selectedFile;
-                        $(".file")
-                            .html(selectedFile)
-                            .css({
-                                "font-weight": "200",
-                                color: "black",
-                                border: "1px solid white",
-                                transition: "all 1.6s  cubic-bezier(0.25, 0.8, 0.25, 1)"
-                            });
-                        $(".guide-body").css({
-                            "padding-bottom": "40px"
+                filters: [{
+                    name: "Excel file",
+                    extensions: ["xlsx"]
+                }]
+            },
+            selectedFile => {
+                if (selectedFile !== undefined) {
+                    fileName = selectedFile;
+                    $(".file")
+                        .html(selectedFile)
+                        .css({
+                            "font-weight": "200",
+                            color: "black",
+                            border: "1px solid white",
+                            transition: "all 1.6s  cubic-bezier(0.25, 0.8, 0.25, 1)"
                         });
-                        $(".file-error").fadeOut("slow");
-                    }
+                    $(".guide-body").css({
+                        "padding-bottom": "40px"
+                    });
+                    $(".file-error").fadeOut("slow");
                 }
+            }
             );
         });
 
@@ -212,10 +201,7 @@
 
             showloader("getting your report ready", "wave");
 
-            // $(location).attr('href', '../../app/src/components/dashboard.html');
-
             setTimeout(function () {
-
 
                 runCalculations()
                     .then((result) => {
@@ -226,25 +212,22 @@
 
                             closeLoader();
 
-                            storage.set('data', claimData, function (error) {
-                                if (error) throw error;
+                            storage.set("data", claimData, function (error) {
+                                if (error) {
+                                    throw error;
+                                }
 
-                                notify();
-
-                                $(location).attr('href', '../../app/src/components/dashboard.html');
+                                $(location).attr("href", "../../app/src/components/dashboard.html");
 
                             });
 
-
-
                         }
-
 
                     }).catch((err) => {
 
                         claimError = err;
 
-                        console.log(claimError);
+                        
 
                         closeLoader();
 
@@ -343,24 +326,24 @@
         // Optionally use arrow keys to navigate walkthrough
         return $(document).keydown(function (e) {
             switch (e.which) {
-                case 37:
-                    // left
-                    walkthrough.prevScreen();
-                    break;
-                case 38:
-                    // up
-                    walkthrough.openModal();
-                    break;
-                case 39:
-                    // right
-                    walkthrough.nextScreen();
-                    break;
-                case 40:
-                    // down
-                    walkthrough.closeModal();
-                    break;
-                default:
-                    return;
+            case 37:
+                // left
+                walkthrough.prevScreen();
+                break;
+            case 38:
+                // up
+                walkthrough.openModal();
+                break;
+            case 39:
+                // right
+                walkthrough.nextScreen();
+                break;
+            case 40:
+                // down
+                walkthrough.closeModal();
+                break;
+            default:
+                return;
             }
             e.preventDefault();
         });

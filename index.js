@@ -401,12 +401,18 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       TOTAL: toCurrency(sumTotal)
     });
 
-    return _.sortBy(summary, 'CLASS');
+    summary = _.sortBy(summary, 'CLASS');
+
+    // move TOTAL SUM to last index
+    summary.push(summary.splice(12, 1)[0]);
+
+    return summary;
+
   }
 
   return new Promise(function (resolve, reject) {
 
-         
+
     let claimData = {};
 
     //* ============== movement calcultions section ================* /
@@ -772,6 +778,73 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       intimatedEndOsMovementNoPaid
     );
 
+
+
+
+
+    let totalMovementWithDuplicates = _.concat(beginEndmovementWithPaid,
+      beginEndMovementNoPaid,
+      beginPaidMovementNoEndOS,
+      intimatedPaidmovementNoEndOS,
+      intimatedPaidMovementWithEndOs,
+      intimatedEndOsMovementNoPaid);
+
+    let totalMovementUniqueClaimNo = _
+      .uniqBy(totalMovementWithDuplicates, "claimNo")
+      .map(claim => claim.claimNo);
+
+    let totalMovement = totalMovementUniqueClaimNo
+      .map(function (claimNo) {
+
+        let totaldifference = 0;
+        let newObj = {};
+        totalMovementWithDuplicates.map(function (dupClaim) {
+
+          for (const prop in dupClaim) {
+
+            if (claimNo === dupClaim.claimNo) {
+
+              if (prop === "difference") {
+                totaldifference = totaldifference + toFloat(dupClaim.difference);
+                newObj.difference = totaldifference;
+              } else {
+                newObj[prop] = dupClaim[prop];
+              }
+            }
+          }
+        });
+
+        return newObj;
+      })
+      .filter(claim => claim.difference != 0);
+
+
+
+      console.log('totalMovement---', getSummary(totalMovement, 'difference'));
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     let combinedAllDuplicate = _.concat(
       osBeginMonth,
       intimated,
@@ -791,11 +864,19 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
           if (claimNo == dupClaim.claimNo) {
             newObj[prop] = dupClaim[prop];
           }
+
         }
       });
 
       return newObj;
     });
+
+
+
+
+
+
+
 
     //new movement logic
 
@@ -890,8 +971,6 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
         return newObj;
       })
       .filter(claim => claim.movement === "YES" && claim.paidAmount != undefined);
-
-
 
 
     let newRevivedclaims = combinedAll
@@ -1300,8 +1379,8 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
     });
 
     let fileName = path.basename(sourcefile.toString(), '.xlsx');
-     let finalReportName = `Final Report (${fileName}).xlsx`;
-     let finalReportPath = `${reportDestination.toString()}/${finalReportName}`;
+    let finalReportName = `Final Report (${fileName}).xlsx`;
+    let finalReportPath = `${reportDestination.toString()}/${finalReportName}`;
 
 
     del.sync(["./app/tmp/*.xlsx"]);
@@ -1324,33 +1403,35 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
         return otherWorkBook.toFileAsync(finalReportPath);
       })
       .catch(err => {
-        reject({error: err.message});
+        reject({
+          error: err.message
+        });
       });
 
 
-       claimData.osBeginingClaims = osBeginMonth;
-       claimData.osEndClaims = osEndMonth;
-       claimData.intimatedClaims = intimatedWithZeros;
-       claimData.paidClaims = paymentWithDuplicate;
-       claimData.paidSettledClaims = paidSettled;
-       claimData.closedAsNoClaims = totalClosedAsNoClaim;
-       claimData.revived = revivedClaims;
-       claimData.movement = newCalcMovement;
-       claimData.allClaims = combinedAllwithLabels;
-       claimData.osBeginingSummary = oSbeginMonthSummary;
-       claimData.intimatedSummary = intimatedSummary;
-       claimData.paidSummary = paidSummary;
-       claimData.paidSettledSummary = paidSettledSummary;
-       claimData.osEndsummary = oSEndMonthSummary;
-       claimData.movementSummary = totalMovementSummary;
-       claimData.closedAsNoClaimSummary = totalClosedAsNoClaimSummary;
-       claimData.revivedSummary = totalRevivedSummary;
-       claimData.outputFilePath = finalReportPath;
-       claimData.outputFileName = finalReportName;
+    claimData.osBeginingClaims = osBeginMonth;
+    claimData.osEndClaims = osEndMonth;
+    claimData.intimatedClaims = intimatedWithZeros;
+    claimData.paidClaims = paymentWithDuplicate;
+    claimData.paidSettledClaims = paidSettled;
+    claimData.closedAsNoClaims = totalClosedAsNoClaim;
+    claimData.revived = revivedClaims;
+    claimData.movement = newCalcMovement;
+    claimData.allClaims = combinedAllwithLabels;
+    claimData.osBeginingSummary = oSbeginMonthSummary;
+    claimData.intimatedSummary = intimatedSummary;
+    claimData.paidSummary = paidSummary;
+    claimData.paidSettledSummary = paidSettledSummary;
+    claimData.osEndsummary = oSEndMonthSummary;
+    claimData.movementSummary = totalMovementSummary;
+    claimData.closedAsNoClaimSummary = totalClosedAsNoClaimSummary;
+    claimData.revivedSummary = totalRevivedSummary;
+    claimData.outputFilePath = finalReportPath;
+    claimData.outputFileName = finalReportName;
 
 
-      resolve(claimData);
-   
+    resolve(claimData);
+
   });
 
 }
@@ -1358,7 +1439,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
 
 module.exports = {
 
-    runCalculationsFromIndex: runCalculationsFromIndex
+  runCalculationsFromIndex: runCalculationsFromIndex
 
 };
 /*  Insurance Classes 

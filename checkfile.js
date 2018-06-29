@@ -49,9 +49,13 @@ let paymentKeyChangesMap = {
     "PAID AMOUNT": "paidAmount"
 };
 
-
-passFileNameForLoading = function (file) {
-
+/**
+ *
+ *
+ * @param {*} file
+ * @returns
+ */
+passFileNameForLoading = function(file) {
     workbook = XLSX.readFile(file.toString());
     sheetNameList = workbook.SheetNames;
     sheet1 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[0]]);
@@ -61,24 +65,26 @@ passFileNameForLoading = function (file) {
     sheets = [sheet1, sheet2, sheet3, sheet4];
 
     return checkSheetFields();
-
 };
 
 // check files
-checkSheetFields = function () {
-
+/**
+ *
+ *
+ * @returns status
+ */
+checkSheetFields = function() {
     let status = [];
 
     if (sheets.length < 4) {
         status.push({
             sheet: "no sheets",
-            status: 'error',
+            status: "error",
             message: "one or more sheets are missing"
         });
     } else {
-
         let sheetName = "";
-        sheets.map(function (sheet, index) {
+        sheets.map(function(sheet, index) {
             let theIndex = index + 1;
             let keysMap;
 
@@ -100,7 +106,7 @@ checkSheetFields = function () {
                 if (!keysMap.hasOwnProperty(prop)) {
                     status.push({
                         sheet: sheetName,
-                        status: 'error',
+                        status: "error",
                         message: `column name is mispelled or missing *${prop}*`
                     });
                 }
@@ -110,20 +116,15 @@ checkSheetFields = function () {
 
     if (status.length < 1) {
         status.push({
-            status: 'success',
+            status: "success",
             sheet: "all",
             message: "all sheets are OKAY"
         });
     }
 
-
     return status;
 };
 
-
-
 module.exports = {
-
     passFileNameForLoading: passFileNameForLoading
-
 };

@@ -12,9 +12,7 @@
 
         let claimData, claimError;
 
-        const {
-            shell
-        } = require("electron");
+        const { shell } = require("electron");
         const {
             dialog,
             getCurrentWindow
@@ -103,7 +101,7 @@
 
         }
 
-        $(".directory").click(() => {
+        $(".directory").click(function(){
             dialog.showOpenDialog({
                 properties: ["openDirectory"]
             },
@@ -125,7 +123,7 @@
             );
         });
 
-        $(".file").click(() => {
+        $(".file").click(function() {
             dialog.showOpenDialog({
                 filters: [{
                     name: "Excel file",
@@ -152,7 +150,7 @@
             );
         });
 
-        $(".check-errors").click(() => {
+        $(".check-errors").click(function(){
 
             if (fileName === undefined) {
                 $(".guide-body").css({
@@ -181,7 +179,7 @@
             }
         });
 
-        $(".check-again").click(() => {
+        $(".check-again").click(function (){
             fileName = undefined;
             directoryName = undefined;
             FileCheckstatus = undefined;
@@ -193,7 +191,7 @@
             });
         });
 
-        $(".to-instructions").click(() => {
+        $(".to-instructions").click(function(){
             reload();
         });
 
@@ -210,25 +208,29 @@
 
                         if (claimData !== undefined) {
 
-                            closeLoader();
+
 
                             storage.set("data", claimData, function (error) {
                                 if (error) {
                                     throw error;
                                 }
 
-                                $(location).attr("href", "../../app/src/components/dashboard.html");
+                                setTimeout(function () {
 
+                                    // $(location).attr("href", "../../app/src/components/dashboard.html");
+
+                                    closeLoader();
+
+                                }, 4000);
                             });
 
                         }
 
+
+
                     }).catch((err) => {
 
                         claimError = err;
-
-                        
-
                         closeLoader();
 
                     });

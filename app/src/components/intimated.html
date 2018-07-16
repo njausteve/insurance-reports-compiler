@@ -24,7 +24,7 @@
 
 <body class="">
     <div class="wrapper">
-        <div class="sidebar" data-color="azure" data-background-color="white" data-image="../assets/img/sidebar-1.jpg">
+        <div class="sidebar" data-color="azure" data-background-color="white" data-image="">
             <!--
         Tip 1: You can change the color of the sidebar using: data-color="purple | azure | green | orange | danger"
 
@@ -353,4 +353,23 @@
 <script src="../assets/js/vendor/popper.min.js"></script>
 <script src="../assets/js/vendor/bootstrap-material-design.js"></script>
 <script src="../assets/js/vendor/material-dashboard.js"></script>
+<script>
+ $(document).ready(function () { const storage = require("electron-json-storage"); const { shell, clipboard } = require("electron");
+let claimData; function toClipboard(passedString) { return clipboard.writeText(passedString); } $(".table").delegate("td",
+"click", function () { toClipboard($(this).html()); }); function initializeDataLoad() { claimData.osBeginingClaims.map(item
+=> { $(".os-begining-claims tbody").append( `
+<tr>
+    <td class='class-name'>${item.insuranceClass}</td>
+    <td>${item.policyNo}</td>
+    <td>${item.claimNo}</td>
+    <td>${item.insuredName}</td>
+    <td>${item.dateReported}</td>
+    <td>${item.dateOfLoss}</td>
+    <td>${item.periodFrom}</td>
+    <td>${item.periodTo}</td>
+    <td class="text-primary">${item.osBeginEstimate}</td>
+</tr>` ); }); } storage.get("data", function (error, data) { if (error) { throw error; } claimData = data; initializeDataLoad();
+}); });
+
+</script>
 </html>

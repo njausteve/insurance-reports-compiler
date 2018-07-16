@@ -1,34 +1,71 @@
 {
-  "name": "insurance-report-compiler",
-  "version": "1.0.0",
-  "description": "Insurance reports compiler",
-  "main": "main.js",
-  "scripts": {
-    "start": "electron .",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "Insurance",
-    "javascript",
-    "electron"
-  ],
-  "author": "@njausteve",
-  "license": "ISC",
-  "dependencies": {
-    "del": "^3.0.0",
-    "electron": "^2.0.2",
-    "electron-json-storage": "^4.1.0",
-    "electron-reload": "^1.2.2",
-    "lodash": "^4.17.10",
-    "object-rename-keys": "^1.2.1",
-    "xlsx": "^0.12.13",
-    "xlsx-populate": "^1.17.0"
-  },
-  "devDependencies": {
-    "eslint-config-standard": "^11.0.0",
-    "eslint-plugin-import": "^2.12.0",
-    "eslint-plugin-node": "^6.0.1",
-    "eslint-plugin-promise": "^3.8.0",
-    "eslint-plugin-standard": "^3.1.0"
-  }
+    "name": "insurance-report-compiler",
+    "version": "1.0.0",
+    "description": "",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron .",
+        "build": "electron-packager . claimsTool",
+        "electron-toolkit": "electron ./node_modules/electron-toolkit",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "Insurance",
+        "javascript",
+        "electron"
+    ],
+    "author": "@njausteve",
+    "license": "ISC",
+    "dependencies": {
+        "del": "^3.0.0",
+        "electron-json-storage": "^4.1.0",
+        "electron-reload": "^1.2.2",
+        "lodash": "^4.17.10",
+        "object-rename-keys": "^1.2.1",
+        "xlsx": "^0.12.13",
+        "xlsx-populate": "^1.17.0"
+    },
+    "devDependencies": {
+        "electron": "^2.0.4",
+        "electron-builder": "^20.19.2",
+        "electron-packager": "^12.1.0",
+        "electron-toolkit": "^1.0.24",
+        "eslint-config-standard": "^11.0.0",
+        "eslint-plugin-import": "^2.12.0",
+        "eslint-plugin-node": "^6.0.1",
+        "eslint-plugin-promise": "^3.8.0",
+        "eslint-plugin-standard": "^3.1.0"
+    },
+    "build": {
+        "appId": "com.electron.insurance-report-compiler",
+        "copyright": "Copyright © 2018 @njausteve",
+        "productName": "insurance-report-compiler",
+        "electronVersion": "2.0.4",
+        "asar": true,
+        "directories": {
+            "app": "/Users/mac/workspace/insurance-report-compiler",
+            "output": "dist"
+        },
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "ia32"
+                    ]
+                }
+            ]
+        },
+        "mac": {
+            "target": [
+                {
+                    "target": "dmg",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ],
+            "category": "public.app-category.utilities"
+        }
+    }
 }

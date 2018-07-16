@@ -17,12 +17,12 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" />
     <link rel="stylesheet" href="../assets/css/vendor/material-dashboard.min.css">
 
- 
+
 </head>
 
 <body class="">
     <div class="wrapper">
-        <div class="sidebar" data-color="azure" data-background-color="white" data-image="../assets/img/sidebar-1.jpg">
+        <div class="sidebar" data-color="azure" data-background-color="white" data-image="">
             <!--
         Tip 1: You can change the color of the sidebar using: data-color="purple | azure | green | orange | danger"
 
@@ -33,7 +33,7 @@
                     Creative Tim
                 </a>
             </div>
-           <div class="sidebar-wrapper">
+            <div class="sidebar-wrapper">
                 <ul class="nav">
                     <li class="nav-item active ">
                         <a class="nav-link" href="./dashboard.html">
@@ -166,9 +166,9 @@
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-md-12">
-                            <div class="card">
+                            <div class="card os-begining-claims">
                                 <div class="card-header card-header-info">
-                                    <h4 class="card-title ">Table title</h4>
+                                    <h4 class="card-title ">Outstanding claim (Begining)</h4>
                                     <p class="card-category"> table description here</p>
                                 </div>
                                 <div class="card-body">
@@ -206,121 +206,7 @@
 
                                             </thead>
                                             <tbody>
-                                                <tr>
-                                                    <td>
-                                                        1
-                                                    </td>
-                                                    <td>
-                                                        1
-                                                    </td>
-                                                    <td>
-                                                        1
-                                                    </td>
-                                                    <td>
-                                                        1
-                                                    </td>
 
-                                                    <td>
-                                                        1
-                                                    </td>
-                                                    <td>
-                                                        Dakota Rice
-                                                    </td>
-                                                    <td>
-                                                        Niger
-                                                    </td>
-                                                    <td>
-                                                        Oud-Turnhout
-                                                    </td>
-                                                    <td class="text-primary">
-                                                        $36,738
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td>
-                                                        2
-                                                    </td>
-                                                    <td>
-                                                        Minerva Hooper
-                                                    </td>
-                                                    <td>
-                                                        Curaçao
-                                                    </td>
-                                                    <td>
-                                                        Sinaai-Waas
-                                                    </td>
-                                                    <td class="text-primary">
-                                                        $23,789
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td>
-                                                        3
-                                                    </td>
-                                                    <td>
-                                                        Sage Rodriguez
-                                                    </td>
-                                                    <td>
-                                                        Netherlands
-                                                    </td>
-                                                    <td>
-                                                        Baileux
-                                                    </td>
-                                                    <td class="text-primary">
-                                                        $56,142
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td>
-                                                        4
-                                                    </td>
-                                                    <td>
-                                                        Philip Chaney
-                                                    </td>
-                                                    <td>
-                                                        Korea, South
-                                                    </td>
-                                                    <td>
-                                                        Overland Park
-                                                    </td>
-                                                    <td class="text-primary">
-                                                        $38,735
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td>
-                                                        5
-                                                    </td>
-                                                    <td>
-                                                        Doris Greene
-                                                    </td>
-                                                    <td>
-                                                        Malawi
-                                                    </td>
-                                                    <td>
-                                                        Feldkirchen in Kärnten
-                                                    </td>
-                                                    <td class="text-primary">
-                                                        $63,542
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td>
-                                                        6
-                                                    </td>
-                                                    <td>
-                                                        Mason Porter
-                                                    </td>
-                                                    <td>
-                                                        Chile
-                                                    </td>
-                                                    <td>
-                                                        Gloucester
-                                                    </td>
-                                                    <td class="text-primary">
-                                                        $78,615
-                                                    </td>
-                                                </tr>
                                             </tbody>
                                         </table>
                                     </div>
@@ -352,4 +238,61 @@
 <script src="../assets/js/vendor/popper.min.js"></script>
 <script src="../assets/js/vendor/bootstrap-material-design.js"></script>
 <script src="../assets/js/vendor/material-dashboard.js"></script>
+<script>
+    $(document).ready(function () {
+
+ console.log("window.location.toString();", window.location.toString());
+
+
+        const storage = require("electron-json-storage");
+        const {
+            shell,
+            clipboard
+        } = require("electron");
+        let claimData;
+
+        function
+        toClipboard(passedString) {
+            return clipboard.writeText(passedString);
+        }
+
+        $(".table").delegate("td", "click", function () {
+            toClipboard($(this).html());
+        });
+
+
+        function initializeDataLoad() {
+
+            claimData.osBeginingClaims.map(item => {
+
+                $(".os-begining-claims tbody").append(
+                    `
+<tr>
+<td class='class-name'>${item.insuranceClass}</td>
+<td>${item.policyNo}</td>
+<td>${item.claimNo}</td>
+<td>${item.insuredName}</td>
+<td>${item.dateReported}</td>
+<td>${item.dateOfLoss}</td>
+<td>${item.periodFrom}</td>
+<td>${item.periodTo}</td>
+<td class="text-primary">${item.osBeginEstimate}</td>
+</tr>`
+                );
+            });
+
+
+        }
+        storage.get("data",
+            function (error, data) {
+                if (error) {
+                    throw error;
+                }
+                claimData = data;
+                initializeDataLoad();
+            });
+
+    });
+</script>
+
 </html>

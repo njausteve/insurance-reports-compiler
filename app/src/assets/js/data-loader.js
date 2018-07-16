@@ -10,10 +10,9 @@ $(document).ready(function () {
 
     function toClipboard(passedString) {
 
-        return clipboard.writeText(passedString)
+        return clipboard.writeText(passedString);
 
     }
-
 
     function titleCase(str) {
         return str.toLowerCase().split(" ").map(function (word) {
@@ -42,102 +41,62 @@ $(document).ready(function () {
 
     function initializeDataLoad() {
 
-        claimData.osBeginingSummary.map((item) => {
 
 
-            $(".osBegining-summary tbody").append(
-                `
-<tr>
-<td class='class-name'>${titleCase(item.CLASS)}</td>
-    <td>${item.COUNT}</td>
-    <td>${item.TOTAL}</td>
-</tr>`
-            );
 
-        });
-
-        claimData.intimatedSummary.map(item => {
-
-            $(".intimated-summary tbody").append(
-                `
-<tr>
-<td class='class-name'>${titleCase(item.CLASS)}</td>
-    <td>${item.COUNT}</td>
-    <td>${item.TOTAL}</td>
-</tr>`
-            );
-        });
-
-        claimData.paidSummary.map(item => {
-            $(".paid-summary tbody").append(
-                `
-<tr>
-<td class='class-name'>${titleCase(item.CLASS)}</td>
-    <td>${item.COUNT}</td>
-    <td>${item.TOTAL}</td>
-</tr>`
-            );
-        });
-        claimData.paidSettledSummary.map(item => {
-
-            $(".paid-settled-summary tbody").append(
-                `
-<tr>
-    <td class='class-name'>${titleCase(item.CLASS)}</td>
-    <td>${item.COUNT}</td>
-    <td>${item.TOTAL}</td>
-</tr>`
-            );
-        });
+        /**
+         *
+         *
+         * @param {*} dataset array containing data to be displayed
+         * @param {*} className of the table name in the view to be populated
+         */
 
 
-        claimData.osEndsummary.map(item => {
-            $(".os-End-summary tbody").append(
-                `
-<tr>
-    <td class='class-name'>${titleCase(item.CLASS)}</td>
-    <td>${item.COUNT}</td>
-    <td>${item.TOTAL}</td>
-</tr>`
-            );
-        });
+        /*
+        function populateTable(dataset, className) {
+            var table = $(`.${className} tbody`);
+
+            dataset.map(item => {
+
+                var tableRow = table.append("<tr></tr>");
+
+                for (const prop in item) {
+  
+                    if (item.hasOwnProperty(prop)) {
+
+                        if (item[prop] === undefined) {
+
+                            tableRow.append("<td></td>");
 
 
-        claimData.movementSummary.map(item => {
-            $(".revision-summary tbody").append(
-                `
-<tr>
-    <td class='class-name'>${titleCase(item.CLASS)}</td>
-    <td>${item.COUNT}</td>
-    <td>${item.TOTAL}</td>
-</tr>`
-            );
-        });
+                        } else if (prop === "osBeginEstimate") {
 
-        claimData.revivedSummary.map(item => {
-            $(".revived-summary tbody").append(
-                `
-<tr>
-    <td class='class-name'>${titleCase(item.CLASS)}</td>
-    <td>${item.COUNT}</td>
-    <td>${item.TOTAL}</td>
-</tr>`
-            );
-        });
+                            //tableRow.append(`<td class="text-primary">${item[prop]}</td>`);
+
+                        } else {
+
+                            tableRow.append(`<td>${item[prop]}</td>`);
+
+                        }
 
 
-        claimData.closedAsNoClaimSummary.map(item => {
-            $(".closed-as-noclaim-summary tbody").append(
-                `
-<tr>
-    <td class='class-name'>${titleCase(item.CLASS)}</td>
-    <td>${item.COUNT}</td>
-    <td>${item.TOTAL}</td>
-</tr>`
-            );
-        });
+
+                    }
 
 
+                }
+
+            });
+
+
+        }
+
+        populateTable(claimData.osBeginingClaims, "os-begining-claims");
+
+*/
+
+
+    
     }
 
     storage.get("data", function (error, data) {
@@ -146,7 +105,7 @@ $(document).ready(function () {
         }
         claimData = data;
 
-        // notify();         
+                
         initializeDataLoad();
 
     });

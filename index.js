@@ -5,389 +5,390 @@ const del = require("del");
 const path = require("path");
 const objectRenameKeys = require("object-rename-keys");
 
-let workbook;
+let osBeginKeyChangesMap = {
+    CLASS: "insuranceClass",
+    "POLICY NO": "policyNo",
+    "CLAIM NO": "claimNo",
+    "INSURED NAME": "insuredName",
+    "DATE REPORTED": "dateReported",
+    "DATE OF LOSS": "dateOfLoss",
+    "PERIOD FROM": "periodFrom",
+    "PERIOD TO": "periodTo",
+    ESTIMATE: "osBeginEstimate"
+};
+
+let osEndMonthKeyChangesMap = {
+    CLASS: "insuranceClass",
+    "POLICY NO": "policyNo",
+    "CLAIM NO": "claimNo",
+    "INSURED NAME": "insuredName",
+    "DATE REPORTED": "dateReported",
+    "DATE OF LOSS": "dateOfLoss",
+    "PERIOD FROM": "periodFrom",
+    "PERIOD TO": "periodTo",
+    ESTIMATE: "osEndMonthEstimate"
+};
+
+let intimatedKeyChangesMap = {
+    CLASS: "insuranceClass",
+    INSURED: "insured",
+    AGENCY: "Agency",
+    "POLICY NO": "policyNo",
+    "CLAIM NO": "claimNo",
+    "INTIMATION RESERVE": "intimationReserve",
+    "DATE OF LOSS": "dateOfLoss",
+    "DATE REPORTED": "dateReported"
+};
+
+let paymentKeyChangesMap = {
+    CLASS: "insuranceClass",
+    "DATE OF CHEQUE": "dateOfcheque",
+    "CHEQUE NO": "chequeNo",
+    "CLAIM NO": "claimNo",
+    "POLICY HOLDER": "policyHolder",
+    "UW YEAR": "uwYear",
+    PAYEE: "payee",
+    "PAID AMOUNT": "paidAmount"
+};
+
+let printToExcelKeysmap = {
+    insuranceClass: "CLASS",
+    policyNo: "POLICY NO",
+    claimNo: "CLAIM NO",
+    insuredName: "INSURED NAME",
+    dateReported: "DATE REPORTED",
+    dateOfLoss: "DATE OF LOSS",
+    periodFrom: "PERIOD FROM",
+    periodTo: "PERIOD TO",
+    osBeginEstimate: "BEGINING OS ESTIMATE",
+    osEndMonthEstimate: "END OS ESTIMATE",
+    insured: "INSURED",
+    Agency: "AGENCY",
+    intimationReserve: "INTIMATION RESERVE",
+    dateOfcheque: "DATE OF CHEQUE",
+    chequeNo: "CHEQUE NO",
+    policyHolder: "POLICY HOLDER",
+    uwYear: "UW YEAR",
+    payee: "PAYEE",
+    paidAmount: "PAID AMOUNT",
+    difference: "DIFFERENCE",
+    revived: "REVIVED",
+    movement: "MOVED",
+    noClaim: "NO CLAIM",
+    settled: "SETTTLED"
+};
+
+// headers for excel sheets
+
+let summaryHeader = {
+    header: ["CLASS", "COUNT", "TOTAL"]
+};
+
+let closedAsnoClaimHeader = {
+    header: [
+        "CLASS",
+        "POLICY NO",
+        "CLAIM NO",
+        "INSURED NAME",
+        "DATE REPORTED",
+        "DATE OF LOSS",
+        "PERIOD FROM",
+        "PERIOD TO",
+        "BEGINING OS ESTIMATE"
+    ]
+};
+
+let combinedAllHeader = {
+    header: [
+        "CLASS",
+        "POLICY NO",
+        "CLAIM NO",
+        "INSURED NAME",
+        "DATE REPORTED",
+        "DATE OF LOSS",
+        "PERIOD FROM",
+        "PERIOD TO",
+        "BEGINING OS ESTIMATE",
+        "INTIMATION RESERVE",
+        "PAID AMOUNT",
+        "END OS ESTIMATE",
+        "DIFFERENCE",
+        "REVIVED",
+        "MOVED",
+        "NO CLAIM",
+        "INSURED",
+        "AGENCY",
+        "DATE OF CHEQUE",
+        "CHEQUE NO",
+        "POLICY HOLDER",
+        "UW YEAR",
+        "PAYEE"
+    ]
+};
+
+let revivedHeader = {
+    header: [
+        "CLASS",
+        "POLICY NO",
+        "CLAIM NO",
+        "INSURED NAME",
+        "DATE REPORTED",
+        "DATE OF LOSS",
+        "PERIOD FROM",
+        "PERIOD TO",
+        "END OS ESTIMATE"
+    ]
+};
+
+
+/* ============== utility/ helper functions here =============*/
+
+// convert all keys to original
+function toExcelSheet(sheetToprint) {
+    return objectRenameKeys(sheetToprint, printToExcelKeysmap);
+}
+
+// cover camelCase to NORMAL CASE Uppercase
+
+function unCamelCase(str) {
+    str = str.replace(/([a-z\xE0-\xFF])([A-Z\xC0\xDF])/g, "$1 $2");
+    str = str.toLowerCase(); //add space between camelCase text
+    return str.toUpperCase();
+}
+
+// convert to currency format
+
+function toCurrency(value) {
+    return value.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,");
+}
+
+// convert "200,000.75" to 200000.75
+
+function toFloat(stringValue) {
+    return parseFloat(stringValue.toString().replace(/,/g, ""));
+}
+
+function calcMovement(claim) {
+    let newObj = {};
+
+    for (const prop in claim) {
+        newObj[prop] = claim[prop];
+    }
+
+    newObj.difference = (
+        toFloat(newObj.osEndMonthEstimate) - toFloat(newObj.osBeginEstimate)
+    ).toFixed(2);
+
+    return newObj;
+}
+
+function calculatePerclass(targetArray, valueUsedToCalculate) {
+    let ValuesPerClass = {};
+    let motorPrivate = [];
+    let motorPsvHire = [];
+    let miscellaneous = [];
+    let fireDomestic = [];
+    let marine = [];
+    let fireIndustrial = [];
+    let liabilities = [];
+    let motorCommercial = [];
+    let accident = [];
+    let engineering = [];
+    let theft = [];
+    let wiba = [];
+    let medical = [];
+
+
+    targetArray.map(function (claim) {
+
+        let insClass = claim.insuranceClass.trim().toString();
+
+        let valueToPush = toFloat(claim[valueUsedToCalculate]);
+
+        if (
+            insClass === "MOTOR CYCLE" ||
+            insClass === "MOTOR PRIVATE" ||
+            insClass === "MOTOR PRIVATE ENHANCED"
+        ) {
+            motorPrivate.push(valueToPush);
+
+            // motor private
+        } else if (insClass === "MOTOR (PSV) PRIVATE HIRE") {
+            // MOTOR PSV HIRE
+            motorPsvHire.push(valueToPush);
+        } else if (
+            insClass === "BONDS ( I A TA) FINANCIAL GUARA" ||
+            insClass === "GOLFERS/SPORTSMAN INSURANCE"
+        ) {
+            // MISCELLANEOUS
+
+            miscellaneous.push(valueToPush);
+        } else if (insClass === "FIRE DOMESTIC (HOC)") {
+            // FIRE DOMESTIC
+
+            fireDomestic.push(valueToPush);
+        } else if (
+            insClass === "GOODS IN TRANSIT" ||
+            insClass === "MARINE CARGO" ||
+            insClass === "MARINE OPEN COVER" ||
+            insClass === "MARINE HULL"
+        ) {
+            // MARINE
+
+            marine.push(valueToPush);
+        } else if (
+            insClass === "INDUSTRIAL ALL RISKS" ||
+            insClass === "FIRE INDUSTRIAL"
+        ) {
+            fireIndustrial.push(valueToPush);
+            // FIRE INDUSTRIAL
+        } else if (
+            insClass === "CARRIERS LIABILITY POLICY" ||
+            insClass === "CONTRACTUAL LIABILITY POLICY" ||
+            insClass === "PORT LIABILITY POLICY" ||
+            insClass === "PUBLIC LIABILITY" ||
+            insClass === "WAREHOUSE LIABILITY POLICY"
+        ) {
+            liabilities.push(valueToPush);
+            // LIABILITIES
+        } else if (
+            insClass === "MOTOR COMMERCIAL" ||
+            insClass === "MOTOR GENERAL CARTAGE" ||
+            insClass === "MOTOR TRACTORS" ||
+            insClass === "MOTOR TRADE"
+        ) {
+            // MOTOR COMMERCIAL
+            motorCommercial.push(valueToPush);
+        } else if (
+            insClass === "CONTRACTORS ALL RISKS" ||
+            insClass === "ELECTRONIC EQUIPMENT" ||
+            insClass === "ERECTION ALL RISKS" ||
+            insClass === "L.O.P. FOLLOWING MACHINERY B/DOWN" ||
+            insClass === "MACHINERY BREAKDOWN"
+        ) {
+            // ENGINEERING
+            engineering.push(valueToPush);
+        } else if (
+            insClass === "ALL RISKS" ||
+            insClass === "BANKERS BLANKET INSURANCE" ||
+            insClass === "BURGLARY" ||
+            insClass === "CASH IN TRANSIT" ||
+            insClass === "FIDELITY GUARANTEE"
+        ) {
+            // THEFT
+            theft.push(valueToPush);
+        } else if (
+            insClass === "WORKERS INJURY BENEFIT ACT" ||
+            insClass === "WORKMEN'S COMP (COMMON LAW) COVER" ||
+            insClass === "WORKMEN'S COMPENSATION (ACT) CO"
+        ) {
+            // WIBA
+            wiba.push(valueToPush);
+        } else if (
+            insClass === "ACCIDENT HOSPITALISATION INS. P" ||
+            insClass === "HEALTH/MEDICAL EXPENSES INSURANCE" ||
+            insClass === "INDIVIDUAL MEDICAL INSURANCE"
+        ) {
+            // medical
+            medical.push(valueToPush);
+        } else {
+            // ACCIDENT
+            accident.push(valueToPush);
+        }
+    });
+
+    ValuesPerClass.motorPrivate = _.sum(motorPrivate);
+    ValuesPerClass.motorPsvHire = _.sum(motorPsvHire);
+    ValuesPerClass.miscellaneous = _.sum(miscellaneous);
+    ValuesPerClass.fireDomestic = _.sum(fireDomestic);
+    ValuesPerClass.marine = _.sum(marine);
+    ValuesPerClass.fireIndustrial = _.sum(fireIndustrial);
+    ValuesPerClass.liabilities = _.sum(liabilities);
+    ValuesPerClass.motorCommercial = _.sum(motorCommercial);
+    ValuesPerClass.accident = _.sum(accident);
+    ValuesPerClass.engineering = _.sum(engineering);
+    ValuesPerClass.theft = _.sum(theft);
+    ValuesPerClass.wiba = _.sum(wiba);
+    ValuesPerClass.medical = _.sum(medical);
+
+    ValuesPerClass.count = {
+        motorPrivate: motorPrivate.length,
+        motorPsvHire: motorPsvHire.length,
+        miscellaneous: miscellaneous.length,
+        fireDomestic: fireDomestic.length,
+        marine: marine.length,
+        fireIndustrial: fireIndustrial.length,
+        liabilities: liabilities.length,
+        motorCommercial: motorCommercial.length,
+        accident: accident.length,
+        engineering: engineering.length,
+        theft: theft.length,
+        wiba: wiba.length,
+        medical: medical.length
+    };
+
+    return ValuesPerClass;
+}
+
+function getSummary(targetSheet, valueToRefer) {
+    let summary = [];
+    let summaryObj = calculatePerclass(targetSheet, valueToRefer);
+
+    let sumTotal = 0;
+
+    for (const prop in summaryObj) {
+        if (prop !== "count") {
+            sumTotal = sumTotal + summaryObj[prop];
+
+            summary.push({
+                CLASS: unCamelCase(prop),
+                COUNT: summaryObj.count[prop],
+                TOTAL: toCurrency(summaryObj[prop])
+            });
+        }
+    }
+
+    summary.push({
+        CLASS: "TOTAL SUM",
+        COUNT: _.sum(_.values(summaryObj.count)),
+        TOTAL: toCurrency(sumTotal)
+    });
+
+    summary = _.sortBy(summary, "CLASS");
+
+    // move TOTAL SUM to last index
+    summary.push(summary.splice(12, 1)[0]);
+
+    return summary;
+}
 
 function runCalculationsFromIndex(sourcefile, reportDestination) {
-    workbook = XLSX.readFile(sourcefile.toString());
-
-    let sheetNameList = workbook.SheetNames;
-
-    let sheet1 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[0]]);
-    let sheet2 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[1]]);
-    let sheet3 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[2]]);
-    let sheet4 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[3]]);
-
-    let osBeginKeyChangesMap = {
-        CLASS: "insuranceClass",
-        "POLICY NO": "policyNo",
-        "CLAIM NO": "claimNo",
-        "INSURED NAME": "insuredName",
-        "DATE REPORTED": "dateReported",
-        "DATE OF LOSS": "dateOfLoss",
-        "PERIOD FROM": "periodFrom",
-        "PERIOD TO": "periodTo",
-        ESTIMATE: "osBeginEstimate"
-    };
-
-    let osEndMonthKeyChangesMap = {
-        CLASS: "insuranceClass",
-        "POLICY NO": "policyNo",
-        "CLAIM NO": "claimNo",
-        "INSURED NAME": "insuredName",
-        "DATE REPORTED": "dateReported",
-        "DATE OF LOSS": "dateOfLoss",
-        "PERIOD FROM": "periodFrom",
-        "PERIOD TO": "periodTo",
-        ESTIMATE: "osEndMonthEstimate"
-    };
-
-    let intimatedKeyChangesMap = {
-        CLASS: "insuranceClass",
-        INSURED: "insured",
-        AGENCY: "Agency",
-        "POLICY NO": "policyNo",
-        "CLAIM NO": "claimNo",
-        "INTIMATION RESERVE": "intimationReserve",
-        "DATE OF LOSS": "dateOfLoss",
-        "DATE REPORTED": "dateReported"
-    };
-
-    let paymentKeyChangesMap = {
-        CLASS: "insuranceClass",
-        "DATE OF CHEQUE": "dateOfcheque",
-        "CHEQUE NO": "chequeNo",
-        "CLAIM NO": "claimNo",
-        "POLICY HOLDER": "policyHolder",
-        "UW YEAR": "uwYear",
-        PAYEE: "payee",
-        "PAID AMOUNT": "paidAmount"
-    };
-
-    let printToExcelKeysmap = {
-        insuranceClass: "CLASS",
-        policyNo: "POLICY NO",
-        claimNo: "CLAIM NO",
-        insuredName: "INSURED NAME",
-        dateReported: "DATE REPORTED",
-        dateOfLoss: "DATE OF LOSS",
-        periodFrom: "PERIOD FROM",
-        periodTo: "PERIOD TO",
-        osBeginEstimate: "BEGINING OS ESTIMATE",
-        osEndMonthEstimate: "END OS ESTIMATE",
-        insured: "INSURED",
-        Agency: "AGENCY",
-        intimationReserve: "INTIMATION RESERVE",
-        dateOfcheque: "DATE OF CHEQUE",
-        chequeNo: "CHEQUE NO",
-        policyHolder: "POLICY HOLDER",
-        uwYear: "UW YEAR",
-        payee: "PAYEE",
-        paidAmount: "PAID AMOUNT",
-        difference: "DIFFERENCE",
-        revived: "REVIVED",
-        movement: "MOVED",
-        noClaim: "NO CLAIM",
-        settled: "SETTTLED"
-    };
-
-    // headers for excel sheets
-
-    let summaryHeader = {
-        header: ["CLASS", "COUNT", "TOTAL"]
-    };
 
 
-    let closedAsnoClaimHeader = {
-        header: [
-            "CLASS",
-            "POLICY NO",
-            "CLAIM NO",
-            "INSURED NAME",
-            "DATE REPORTED",
-            "DATE OF LOSS",
-            "PERIOD FROM",
-            "PERIOD TO",
-            "BEGINING OS ESTIMATE"
-        ]
-    };
+    return new Promise((resolve, reject) => {
 
-    let combinedAllHeader = {
-        header: [
-            "CLASS",
-            "POLICY NO",
-            "CLAIM NO",
-            "INSURED NAME",
-            "DATE REPORTED",
-            "DATE OF LOSS",
-            "PERIOD FROM",
-            "PERIOD TO",
-            "BEGINING OS ESTIMATE",
-            "INTIMATION RESERVE",
-            "PAID AMOUNT",
-            "END OS ESTIMATE",
-            "DIFFERENCE",
-            "REVIVED",
-            "MOVED",
-            "NO CLAIM",
-            "INSURED",
-            "AGENCY",
-            "DATE OF CHEQUE",
-            "CHEQUE NO",
-            "POLICY HOLDER",
-            "UW YEAR",
-            "PAYEE"
-        ]
-    };
+        let fileName = path.basename(sourcefile.toString(), ".xlsx");
+        let finalReportName = `Final Report (${fileName}).xlsx`;
+        let finalReportPath = `${reportDestination.toString()}/${finalReportName}`;
 
-    let revivedHeader = {
-        header: [
-            "CLASS",
-            "POLICY NO",
-            "CLAIM NO",
-            "INSURED NAME",
-            "DATE REPORTED",
-            "DATE OF LOSS",
-            "PERIOD FROM",
-            "PERIOD TO",
-            "END OS ESTIMATE"
-        ]
-    };
+        let workbook = XLSX.readFile(sourcefile.toString());
 
-    // assignment
+        let sheetNameList = workbook.SheetNames;
 
-    let osBeginMonth = objectRenameKeys(sheet1, osBeginKeyChangesMap);
-    let intimatedWithZeros = objectRenameKeys(sheet2, intimatedKeyChangesMap);
-    let paymentWithDuplicate = objectRenameKeys(sheet3, paymentKeyChangesMap);
-    let osEndMonth = objectRenameKeys(sheet4, osEndMonthKeyChangesMap);
+        let sheet1 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[0]]);
+        let sheet2 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[1]]);
+        let sheet3 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[2]]);
+        let sheet4 = XLSX.utils.sheet_to_json(workbook.Sheets[sheetNameList[3]]);
 
-    /* ============== utility/ helper functions here =============*/
 
-    // convert all keys to original
-    function toExcelSheet(sheetToprint) {
-        return objectRenameKeys(sheetToprint, printToExcelKeysmap);
-    }
+        let osBeginMonth = objectRenameKeys(sheet1, osBeginKeyChangesMap);
+        let intimatedWithZeros = objectRenameKeys(sheet2, intimatedKeyChangesMap);
+        let paymentWithDuplicate = objectRenameKeys(sheet3, paymentKeyChangesMap);
+        let osEndMonth = objectRenameKeys(sheet4, osEndMonthKeyChangesMap);
 
-    // cover camelCase to NORMAL CASE Uppercase
-
-    function unCamelCase(str) {
-        str = str.replace(/([a-z\xE0-\xFF])([A-Z\xC0\xDF])/g, "$1 $2");
-        str = str.toLowerCase(); //add space between camelCase text
-        return str.toUpperCase();
-    }
-
-    // convert to currency format
-
-    function toCurrency(value) {
-        return value.toFixed(2).replace(/(\d)(?=(\d{3})+\.)/g, "$1,");
-    }
-
-    // convert "200,000.75" to 200000.75
-
-    function toFloat(stringValue) {
-        return parseFloat(stringValue.toString().replace(/,/g, ""));
-    }
-
-    function calcMovement(claim) {
-        let newObj = {};
-
-        for (const prop in claim) {
-            newObj[prop] = claim[prop];
-        }
-
-        newObj.difference = (
-            toFloat(newObj.osEndMonthEstimate) - toFloat(newObj.osBeginEstimate)
-        ).toFixed(2);
-
-        return newObj;
-    }
-
-    function calculatePerclass(targetArray, valueUsedToCalculate) {
-        let ValuesPerClass = {};
-        let motorPrivate = [];
-        let motorPsvHire = [];
-        let miscellaneous = [];
-        let fireDomestic = [];
-        let marine = [];
-        let fireIndustrial = [];
-        let liabilities = [];
-        let motorCommercial = [];
-        let accident = [];
-        let engineering = [];
-        let theft = [];
-        let wiba = [];
-        let medical = [];
-      
-
-        targetArray.map(function (claim) {
-
-        
-
-            let insClass = claim.insuranceClass.trim().toString();
-
-            let valueToPush = toFloat(claim[valueUsedToCalculate]);
-
-            if (
-                insClass === "MOTOR CYCLE" ||
-                insClass === "MOTOR PRIVATE" ||
-                insClass === "MOTOR PRIVATE ENHANCED"
-            ) {
-                motorPrivate.push(valueToPush);
-
-                // motor private
-            } else if (insClass === "MOTOR (PSV) PRIVATE HIRE") {
-                // MOTOR PSV HIRE
-                motorPsvHire.push(valueToPush);
-            } else if (
-                insClass === "BONDS ( I A TA) FINANCIAL GUARA" ||
-                insClass === "GOLFERS/SPORTSMAN INSURANCE"
-            ) {
-                // MISCELLANEOUS
-
-                miscellaneous.push(valueToPush);
-            } else if (insClass === "FIRE DOMESTIC (HOC)") {
-                // FIRE DOMESTIC
-
-                fireDomestic.push(valueToPush);
-            } else if (
-                insClass === "GOODS IN TRANSIT" ||
-                insClass === "MARINE CARGO" ||
-                insClass === "MARINE OPEN COVER" ||
-                insClass === "MARINE HULL"
-            ) {
-                // MARINE
-
-                marine.push(valueToPush);
-            } else if (
-                insClass === "INDUSTRIAL ALL RISKS" ||
-                insClass === "FIRE INDUSTRIAL"
-            ) {
-                fireIndustrial.push(valueToPush);
-                // FIRE INDUSTRIAL
-            } else if (
-                insClass === "CARRIERS LIABILITY POLICY" ||
-                insClass === "CONTRACTUAL LIABILITY POLICY" ||
-                insClass === "PORT LIABILITY POLICY" ||
-                insClass === "PUBLIC LIABILITY" ||
-                insClass === "WAREHOUSE LIABILITY POLICY"
-            ) {
-                liabilities.push(valueToPush);
-                // LIABILITIES
-            } else if (
-                insClass === "MOTOR COMMERCIAL" ||
-                insClass === "MOTOR GENERAL CARTAGE" ||
-                insClass === "MOTOR TRACTORS" ||
-                insClass === "MOTOR TRADE"
-            ) {
-                // MOTOR COMMERCIAL
-                motorCommercial.push(valueToPush);
-            } else if (
-                insClass === "CONTRACTORS ALL RISKS" ||
-                insClass === "ELECTRONIC EQUIPMENT" ||
-                insClass === "ERECTION ALL RISKS" ||
-                insClass === "L.O.P. FOLLOWING MACHINERY B/DOWN" ||
-                insClass === "MACHINERY BREAKDOWN"
-            ) {
-                // ENGINEERING
-                engineering.push(valueToPush);
-            } else if (
-                insClass === "ALL RISKS" ||
-                insClass === "BANKERS BLANKET INSURANCE" ||
-                insClass === "BURGLARY" ||
-                insClass === "CASH IN TRANSIT" ||
-                insClass === "FIDELITY GUARANTEE"
-            ) {
-                // THEFT
-                theft.push(valueToPush);
-            } else if (
-                insClass === "WORKERS INJURY BENEFIT ACT" ||
-                insClass === "WORKMEN'S COMP (COMMON LAW) COVER" ||
-                insClass === "WORKMEN'S COMPENSATION (ACT) CO"
-            ) {
-                // WIBA
-                wiba.push(valueToPush);
-            } else if (
-                insClass === "ACCIDENT HOSPITALISATION INS. P" ||
-                insClass === "HEALTH/MEDICAL EXPENSES INSURANCE" ||
-                insClass === "INDIVIDUAL MEDICAL INSURANCE"
-            ) {
-                // medical
-                medical.push(valueToPush);
-            } else {
-                // ACCIDENT
-                accident.push(valueToPush);
-            }
-        });
-
-        ValuesPerClass.motorPrivate = _.sum(motorPrivate);
-        ValuesPerClass.motorPsvHire = _.sum(motorPsvHire);
-        ValuesPerClass.miscellaneous = _.sum(miscellaneous);
-        ValuesPerClass.fireDomestic = _.sum(fireDomestic);
-        ValuesPerClass.marine = _.sum(marine);
-        ValuesPerClass.fireIndustrial = _.sum(fireIndustrial);
-        ValuesPerClass.liabilities = _.sum(liabilities);
-        ValuesPerClass.motorCommercial = _.sum(motorCommercial);
-        ValuesPerClass.accident = _.sum(accident);
-        ValuesPerClass.engineering = _.sum(engineering);
-        ValuesPerClass.theft = _.sum(theft);
-        ValuesPerClass.wiba = _.sum(wiba);
-        ValuesPerClass.medical = _.sum(medical);
-
-        ValuesPerClass.count = {
-            motorPrivate: motorPrivate.length,
-            motorPsvHire: motorPsvHire.length,
-            miscellaneous: miscellaneous.length,
-            fireDomestic: fireDomestic.length,
-            marine: marine.length,
-            fireIndustrial: fireIndustrial.length,
-            liabilities: liabilities.length,
-            motorCommercial: motorCommercial.length,
-            accident: accident.length,
-            engineering: engineering.length,
-            theft: theft.length,
-            wiba: wiba.length,
-            medical: medical.length
-        };
-
-        return ValuesPerClass;
-    }
-
-    function getSummary(targetSheet, valueToRefer) {
-        let summary = [];
-        let summaryObj = calculatePerclass(targetSheet, valueToRefer);
-
-        let sumTotal = 0;
-
-        for (const prop in summaryObj) {
-            if (prop !== "count") {
-                sumTotal = sumTotal + summaryObj[prop];
-
-                summary.push({
-                    CLASS: unCamelCase(prop),
-                    COUNT: summaryObj.count[prop],
-                    TOTAL: toCurrency(summaryObj[prop])
-                });
-            }
-        }
-
-        summary.push({
-            CLASS: "TOTAL SUM",
-            COUNT: _.sum(_.values(summaryObj.count)),
-            TOTAL: toCurrency(sumTotal)
-        });
-
-        summary = _.sortBy(summary, "CLASS");
-
-        // move TOTAL SUM to last index
-        summary.push(summary.splice(12, 1)[0]);
-
-        return summary;
-    }
-
-    return new Promise(function (resolve, reject) {
         let claimData = {};
 
         //* ============== movement calcultions section ================* /
-
         let combinedOsWithDuplicates = _.concat(
             osEndMonth,
             osBeginMonth,
@@ -408,13 +409,15 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
             "claimNo"
         );
 
+
+
         // sheet with those that appear ib begining and End OS estimate
         let osNoChange = _.intersectionBy(osBeginMonth, osEndMonth, "claimNo");
 
         // sheet with those that appear in begining and End OS estimate : repeated
         let osRepeatedClaimNo = osNoChange.map(function (claim) {
-            let newObj = {};
 
+            let newObj = {};
             combinedOsWithDuplicates.map(function (combineClaim) {
                 if (combineClaim.claimNo === claim.claimNo) {
                     for (const prop in combineClaim) {
@@ -425,6 +428,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
 
             return newObj;
         });
+
 
         // payments adjustments
         let uniquePaidClaimNo = _
@@ -454,10 +458,14 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
             })
             .filter(claim => claim.paidAmount !== 0);
 
+
+
         // remove zero values claims from intimated
         let intimated = intimatedWithZeros.filter(
             claim => claim.intimationReserve !== 0
         );
+
+
 
         //============== BeginingEndMovement without Paid =============
 
@@ -476,6 +484,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
             "claimNo"
         );
 
+
         //  sheet with downward movement + differences - paid
         let movementDownWithDifference = osRepeatedClaimNo
 
@@ -491,6 +500,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
             payments,
             "claimNo"
         );
+
 
         //   sheet with total up + down that do not appear in Payments
 
@@ -540,6 +550,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
             payments,
             "claimNo"
         );
+
 
         // Begining OS estimates and paid (payments) all {duplicates}
         let beginPaidMovementDuplicates = _.concat(osBeginMonth, payments);
@@ -705,7 +716,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
             "claimNo"
         );
 
-        /* ================== closed As No claim  =============== */
+        // ================== closed As No claim  =============== //
 
         let intimatedNotPaidclaims = _.differenceBy(intimated, payments, "claimNo");
 
@@ -729,7 +740,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
             beginingClosedAsNoClaim
         );
 
-        /* ================== Revived claim  =============== */
+        // ================== Revived claim  =============== //
 
         let combinedIntimatedBegininingOs = _.concat(osBeginMonth, intimated);
 
@@ -812,7 +823,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
             return newObj;
         });
 
-      
+
         let paidSettled = combinedAll
             .map(function (claim) {
                 let newObj = {};
@@ -961,6 +972,27 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
 
 
         let paidSettledSummary = getSummary(paidSettled, "paidAmount");
+
+        claimData.osBeginingClaims = osBeginMonth;
+        claimData.osEndClaims = osEndMonth;
+        claimData.intimatedClaims = intimatedWithZeros;
+        claimData.paidClaims = paymentWithDuplicate;
+        claimData.paidSettledClaims = paidSettled;
+        claimData.closedAsNoClaims = totalClosedAsNoClaim;
+        claimData.revived = revivedClaims;
+        claimData.movement = totalMovement;
+        claimData.allClaims = combinedAllwithLabels;
+        claimData.osBeginingSummary = oSbeginMonthSummary;
+        claimData.intimatedSummary = intimatedSummary;
+        claimData.paidSummary = paidSummary;
+        claimData.paidSettledSummary = paidSettledSummary;
+        claimData.osEndsummary = oSEndMonthSummary;
+        claimData.movementSummary = totalMovementSummary;
+        claimData.closedAsNoClaimSummary = totalClosedAsNoClaimSummary;
+        claimData.revivedSummary = totalRevivedSummary;
+        claimData.outputFilePath = finalReportPath;
+        claimData.outputFileName = finalReportName;
+
 
         // create work book
         let wb = XLSX.utils.book_new();
@@ -1159,15 +1191,13 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
             type: "binary"
         });
 
-        let fileName = path.basename(sourcefile.toString(), ".xlsx");
-        let finalReportName = `Final Report (${fileName}).xlsx`;
-        let finalReportPath = `${reportDestination.toString()}/${finalReportName}`;
+
 
         del.sync(["./app/tmp/*.xlsx"]);
 
-        XLSX.writeFile(wb, "./app/tmp/Unstyled Report.xlsx");
+        XLSX.writeFile(wb, "./app/tmp/unstyledReport.xlsx");
 
-        XlsxPopulate.fromFileAsync("./app/tmp/Unstyled Report.xlsx")
+        XlsxPopulate.fromFileAsync("./app/tmp/unstyledReport.xlsx")
             .then(function (otherWorkBook) {
                 const sheets = otherWorkBook.sheets();
 
@@ -1179,7 +1209,12 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
                     });
                 });
 
-                return otherWorkBook.toFileAsync(finalReportPath);
+                otherWorkBook.toFileAsync(finalReportPath);
+
+                console.log("data done");
+
+                resolve(claimData);
+
             })
             .catch(err => {
                 reject({
@@ -1187,28 +1222,9 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
                 });
             });
 
-        claimData.osBeginingClaims = osBeginMonth;
-        claimData.osEndClaims = osEndMonth;
-        claimData.intimatedClaims = intimatedWithZeros;
-        claimData.paidClaims = paymentWithDuplicate;
-        claimData.paidSettledClaims = paidSettled;
-        claimData.closedAsNoClaims = totalClosedAsNoClaim;
-        claimData.revived = revivedClaims;
-        claimData.movement = totalMovement;
-        claimData.allClaims = combinedAllwithLabels;
-        claimData.osBeginingSummary = oSbeginMonthSummary;
-        claimData.intimatedSummary = intimatedSummary;
-        claimData.paidSummary = paidSummary;
-        claimData.paidSettledSummary = paidSettledSummary;
-        claimData.osEndsummary = oSEndMonthSummary;
-        claimData.movementSummary = totalMovementSummary;
-        claimData.closedAsNoClaimSummary = totalClosedAsNoClaimSummary;
-        claimData.revivedSummary = totalRevivedSummary;
-        claimData.outputFilePath = finalReportPath;
-        claimData.outputFileName = finalReportName;
 
-        resolve(claimData);
     });
+
 }
 
 module.exports = {

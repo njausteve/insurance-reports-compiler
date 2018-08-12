@@ -1,5 +1,6 @@
 const {
     app,
+    Menu,
     BrowserWindow
 } = require("electron");
 
@@ -21,14 +22,14 @@ function createWindow() {
         height: 600
     });
 
-    // and load the index.html of the app.s
-    win.loadURL("./app/src/onboard.html");
+    // and load the index.html of the app.
+    win.loadURL(`file://${__dirname}/app/src/onboard.html`);
 
 
-    //  Menu.setApplicationMenu(custom_menu);
+    // Menu.setApplicationMenu(custom_menu);
 
     // Open the DevTools.
-    win.webContents.openDevTools();
+    // win.webContents.openDevTools();
 
     // Emitted when the window is closed.
     win.on("closed", () => {

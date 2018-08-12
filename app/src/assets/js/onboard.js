@@ -6,13 +6,14 @@
         let fileName, directoryName, FileCheckstatus;
         let reporter = require("../../../../index");
         let checker = require("../../../../checkfile");
-        let fs = require("fs");
+
+        const body = $("body");
 
         const storage = require("electron-json-storage");
 
-        let claimData, claimError;
+        let claimData;
+        let claimError;
 
-        const { shell } = require("electron");
         const {
             dialog,
             getCurrentWindow
@@ -36,7 +37,9 @@
         }
 
         function showloader(textToDisplay, animation) {
-            return $("body").loadingModal({
+
+
+            return body.loadingModal({
                 color: "#000",
                 opacity: "0.95",
                 backgroundColor: "#dcdcde",
@@ -46,14 +49,8 @@
         }
 
         function closeLoader() {
-            return $("body").loadingModal("destroy");
+            return (body.loadingModal("destroy"));
         }
-
-        let runCalculations = function () {
-
-            return reporter.runCalculationsFromIndex(fileName, directoryName);
-
-        };
 
         function checkExcelFile() {
             FileCheckstatus = checker.passFileNameForLoading(fileName);
@@ -101,7 +98,7 @@
 
         }
 
-        $(".directory").click(function(){
+        $(".directory").click(function () {
             dialog.showOpenDialog({
                 properties: ["openDirectory"]
             },
@@ -123,7 +120,7 @@
             );
         });
 
-        $(".file").click(function() {
+        $(".file").click(function () {
             dialog.showOpenDialog({
                 filters: [{
                     name: "Excel file",
@@ -150,7 +147,7 @@
             );
         });
 
-        $(".check-errors").click(function(){
+        $(".check-errors").click(function () {
 
             if (fileName === undefined) {
                 $(".guide-body").css({
@@ -179,7 +176,7 @@
             }
         });
 
-        $(".check-again").click(function (){
+        $(".check-again").click(function () {
             fileName = undefined;
             directoryName = undefined;
             FileCheckstatus = undefined;
@@ -191,24 +188,25 @@
             });
         });
 
-        $(".to-instructions").click(function(){
+        $(".to-instructions").click(function () {
             reload();
         });
 
         $(".check-finish").click(function () {
 
+
             showloader("getting your report ready", "wave");
 
-            setTimeout(function () {
 
-                runCalculations()
-                    .then((result) => {
+            setTimeout(() => {
+
+                reporter.runCalculationsFromIndex(fileName, directoryName)
+
+                    .then(function (result) {
 
                         claimData = result;
 
                         if (claimData !== undefined) {
-
-
 
                             storage.set("data", claimData, function (error) {
                                 if (error) {
@@ -217,7 +215,7 @@
 
                                 setTimeout(function () {
 
-                                    // $(location).attr("href", "../../app/src/components/dashboard.html");
+                                    $(location).attr("href", "../../app/src/components/dashboard.html");
 
                                     closeLoader();
 
@@ -226,17 +224,16 @@
 
                         }
 
-
-
-                    }).catch((err) => {
+                    })
+                    .catch((err) => {
 
                         claimError = err;
                         closeLoader();
 
                     });
-
             }, 500);
 
+            
         });
 
         walkthrough = {

@@ -12,7 +12,7 @@ app/tmp/
 #lock file
 package-lock.json
 
-
+/dist
 #test
 test.js
 

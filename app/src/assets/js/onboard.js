@@ -198,7 +198,7 @@
             showloader("getting your report ready", "wave");
 
 
-            setTimeout(() => {
+            // setTimeout(() => {
 
                 reporter.runCalculationsFromIndex(fileName, directoryName)
 
@@ -213,13 +213,13 @@
                                     throw error;
                                 }
 
-                                setTimeout(function () {
+                                // setTimeout(function () {
 
-                                    $(location).attr("href", "../../app/src/components/dashboard.html");
+                                //     $(location).attr("href", "../../app/src/components/dashboard.html");
 
-                                    closeLoader();
+                                //     closeLoader();
 
-                                }, 4000);
+                                // }, 4000);
                             });
 
                         }
@@ -231,9 +231,9 @@
                         closeLoader();
 
                     });
-            }, 500);
+            // }, 500);
 
-            
+
         });
 
         walkthrough = {

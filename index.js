@@ -197,9 +197,7 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
   let medical = [];
   let noCategory = [];
 
-
-    targetArray.map(claim => {
-
+  targetArray.map(claim => {
     const insClass = claim.insuranceClass.trim().toString();
     let valueToPush = toFloat(claim[valueUsedToCalculate]);
 
@@ -212,7 +210,7 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
     } else if (insClass === "FIRE DOMESTIC") {
       // FIRE DOMESTIC
       fireDomestic.push(valueToPush);
-    } else if (insClass === "MARINE") {
+    } else if (insClass === "MARINE AND TRANSIT GOODS") {
       // MARINE
       marine.push(valueToPush);
     } else if (insClass === "FIRE INDUSTRIAL") {
@@ -233,7 +231,11 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
     } else if (insClass === "PERSONAL ACCIDENT") {
       // PERSONAL ACCIDENT
       personalAccident.push(valueToPush);
-    } else if (insClass === "WORKMENS COMPENSATION") {
+    } else if (
+      insClass === "WORKMENS COMPENSATION" ||
+      insClass === "WORKMEN'S COMPENSATION" ||
+      insClass === "WORKMEN COMPENSATION"
+    ) {
       // WORKMENS COMPENSATION
       workmensCompensation.push(valueToPush);
     } else if (insClass === "MEDICAL") {
@@ -281,7 +283,6 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
 function getSummary(targetSheet, valueToRefer) {
   let summary = [];
   let summaryObj = calculatePerclass(targetSheet, valueToRefer);
-
 
   let sumTotal = 0;
 
@@ -370,7 +371,6 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
 
       return newObj;
     });
-
 
     // payments adjustments
     let uniquePaidClaimNo = _.uniqBy(paymentWithDuplicate, "claimNo").map(
@@ -824,13 +824,9 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       return newObj;
     });
 
-    console.log('combinedAllwithLabels', combinedAllwithLabels);
-
     // summary sheets
 
     let oSbeginMonthSummary = getSummary(osBeginMonth, "osBeginEstimate");
-
-    console.log('oSbeginMonthSummary', oSbeginMonthSummary);
 
     let oSEndMonthSummary = getSummary(osEndMonth, "osEndMonthEstimate");
 
@@ -953,6 +949,8 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       "CLOSED AS NO CLAIM",
       "REVIVED CLAIMS"
     );
+
+    console.log("paidSettledSummary", paidSettledSummary);
 
     let wsOsBeginMonthSummary = XLSX.utils.json_to_sheet(
       toExcelSheet(oSbeginMonthSummary),
@@ -1124,12 +1122,14 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
     wb.Sheets["CLOSED AS NO CLAIM"] = wsClosedASNoClaim;
     wb.Sheets["REVIVED CLAIMS"] = wsRevivedOs;
 
+    console.log("hit before write");
+
     XLSX.write(wb, {
       bookType: "xlsx",
       type: "binary"
     });
 
-    console.log("hit");
+    console.log("hit after write");
 
     del.sync(["./app/tmp/*.xlsx"]);
 

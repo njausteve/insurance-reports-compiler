@@ -196,6 +196,7 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
   let workmensCompensation = [];
   let medical = [];
   let noCategory = [];
+  let psv = [];
 
   targetArray.map(claim => {
     const insClass = claim.insuranceClass.trim().toString();
@@ -241,7 +242,10 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
     } else if (insClass === "MEDICAL") {
       // MEDICAL
       medical.push(valueToPush);
-    } else {
+    } else if (insClass === "PSV") {
+      // PSV
+      psv.push(valueToPush);
+    }else {
       // noCategory
       noCategory.push(valueToPush);
     }
@@ -260,6 +264,7 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
   ValuesPerClass.personalAccident = _.sum(personalAccident);
   ValuesPerClass.workmensCompensation = _.sum(workmensCompensation);
   ValuesPerClass.medical = _.sum(medical);
+  ValuesPerClass.psv = _.sum(psv);
 
   ValuesPerClass.count = {
     motorPrivate: motorPrivate.length,
@@ -274,7 +279,8 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
     engineering: engineering.length,
     theft: theft.length,
     workmensCompensation: workmensCompensation.length,
-    medical: medical.length
+    medical: medical.length,
+    psv: psv.length
   };
 
   return ValuesPerClass;
@@ -489,6 +495,8 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       "claimNo"
     );
 
+    console.log("-----------------------hiut ---------------");
+
     // Begining OS estimates and paid (payments) all {duplicates}
     let beginPaidMovementDuplicates = _.concat(osBeginMonth, payments);
 
@@ -629,6 +637,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
     // intimated and End Os all {duplicates}
     let intimatedEndOsMovementDuplicates = _.concat(intimated, osEndMonth);
 
+    console.log("-----------------------hiut 2---------------");
     // sheet with intimated - EndOS movement
     let intimatedEndOsMovement = intimatedEndOsIncomplete
       .map(function(claim) {
@@ -669,6 +678,8 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       osEndMonth,
       "claimNo"
     );
+
+    console.log("-----------------------hiut 3---------------");
 
     // sheet for claims closed as having no claim From Begining OS
     let beginingClosedAsNoClaim = _.differenceBy(
@@ -765,6 +776,9 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       return newObj;
     });
 
+    console.log("-----------------------hiut 4---------------");
+
+
     let paidSettled = combinedAll
       .map(function(claim) {
         let newObj = {};
@@ -824,6 +838,9 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       return newObj;
     });
 
+
+    console.log("-----------------------hiut 5 ---------------");
+
     // summary sheets
 
     let oSbeginMonthSummary = getSummary(osBeginMonth, "osBeginEstimate");
@@ -850,6 +867,8 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       paidNotInIntimatedBeginingOsRevived,
       "paidAmount"
     );
+
+    console.log("-----------------------hiut 6 ---------------");
 
     let EndOSNotInBeginIntimatedRevivedSummary = getSummary(
       EndOSNotInBeginIntimatedRevived,
@@ -1193,3 +1212,4 @@ WIBA - WORKERS INJURUY BENEFIT ACT, WORKMEN'S COMP (COMMON LAW) COVER, WORKMEN'S
 THEFT - ALL RISKS, BANKERS BLANKET INSURANCE, BUGRLARY, CASH IN TRANSIT, FIDELITY GUARANTEE - MGL/10/
 
 */
+

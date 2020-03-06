@@ -313,7 +313,7 @@ function getSummary(targetSheet, valueToRefer) {
   summary = _.sortBy(summary, "CLASS");
 
   // move TOTAL SUM to last index
-  summary.push(summary.splice(12, 1)[0]);
+  summary.push(summary.splice(13, 1)[0]);
 
   return summary;
 }

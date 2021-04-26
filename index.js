@@ -245,7 +245,7 @@ function calculatePerclass(targetArray, valueUsedToCalculate) {
     } else if (insClass === "PSV") {
       // PSV
       psv.push(valueToPush);
-    }else {
+    } else {
       // noCategory
       noCategory.push(valueToPush);
     }
@@ -365,9 +365,9 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
     let osNoChange = _.intersectionBy(osBeginMonth, osEndMonth, "claimNo");
 
     // sheet with those that appear in begining and End OS estimate : repeated
-    let osRepeatedClaimNo = osNoChange.map(function(claim) {
+    let osRepeatedClaimNo = osNoChange.map(function (claim) {
       let newObj = {};
-      combinedOsWithDuplicates.map(function(combineClaim) {
+      combinedOsWithDuplicates.map(function (combineClaim) {
         if (combineClaim.claimNo === claim.claimNo) {
           for (const prop in combineClaim) {
             newObj[prop] = combineClaim[prop];
@@ -384,11 +384,11 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
     );
 
     let payments = uniquePaidClaimNo
-      .map(function(claimNo) {
+      .map(function (claimNo) {
         let totalPaid = 0;
         let newObj = {};
 
-        paymentWithDuplicate.map(function(dupClaim) {
+        paymentWithDuplicate.map(function (dupClaim) {
           for (const prop in dupClaim) {
             if (claimNo === dupClaim.claimNo) {
               if (prop === "paidAmount") {
@@ -415,7 +415,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
 
     //  sheet with upward movement + differences
     let movedUpWithDifference = osRepeatedClaimNo
-      .filter(function(claim) {
+      .filter(function (claim) {
         return (
           toFloat(claim.osBeginEstimate) < toFloat(claim.osEndMonthEstimate)
         );
@@ -431,7 +431,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
     //  sheet with downward movement + differences - paid
     let movementDownWithDifference = osRepeatedClaimNo
 
-      .filter(function(claim) {
+      .filter(function (claim) {
         return (
           toFloat(claim.osBeginEstimate) > toFloat(claim.osEndMonthEstimate)
         );
@@ -462,10 +462,10 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
 
     //  Begining - End movement with claim paid (paidAmount + EndOsEstimate) - beginingOsEstimate
     let beginEndmovementWithPaid = movementWithPaidUniqueClaimNo
-      .map(function(claimNo) {
+      .map(function (claimNo) {
         let newObj = {};
 
-        begEndPaidCombined.map(function(dupClaim) {
+        begEndPaidCombined.map(function (dupClaim) {
           if (dupClaim.claimNo === claimNo) {
             for (const prop in dupClaim) {
               newObj[prop] = dupClaim[prop];
@@ -475,7 +475,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
 
         return newObj;
       })
-      .map(function(claim) {
+      .map(function (claim) {
         claim.difference = (
           toFloat(claim.paidAmount) +
           toFloat(claim.osEndMonthEstimate) -
@@ -502,10 +502,10 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
 
     // sheet with Begining OS estimates and paid (payments) movements
     let beginPaid = beginPaidIncomplete
-      .map(function(claim) {
+      .map(function (claim) {
         let newObj = {};
 
-        beginPaidMovementDuplicates.map(function(combineClaim) {
+        beginPaidMovementDuplicates.map(function (combineClaim) {
           if (combineClaim.claimNo === claim.claimNo) {
             for (const prop in combineClaim) {
               newObj[prop] = combineClaim[prop];
@@ -544,10 +544,10 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
 
     // claims intimimated + paid (including paidAmount)
     let intimatedPaidNoDifference = intimatedAndPaidClaimNo
-      .map(function(claimNo) {
+      .map(function (claimNo) {
         let newObj = {};
 
-        intimatedPaidMovementwithDuplicates.map(function(combineClaim) {
+        intimatedPaidMovementwithDuplicates.map(function (combineClaim) {
           if (combineClaim.claimNo === claimNo) {
             for (const prop in combineClaim) {
               newObj[prop] = combineClaim[prop];
@@ -562,7 +562,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       );
 
     // intimatedPaidmovement with Difference included
-    let intimatedPaidMovement = intimatedPaidNoDifference.map(function(claim) {
+    let intimatedPaidMovement = intimatedPaidNoDifference.map(function (claim) {
       let newObj = {};
 
       for (const prop in claim) {
@@ -597,10 +597,10 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       "claimNo"
     )
       .map(claim => claim.claimNo)
-      .map(function(claimNo) {
+      .map(function (claimNo) {
         let newObj = {};
 
-        intimatedPaidEndOsWithDuplicates.map(function(combineClaim) {
+        intimatedPaidEndOsWithDuplicates.map(function (combineClaim) {
           if (combineClaim.claimNo === claimNo) {
             for (const prop in combineClaim) {
               newObj[prop] = combineClaim[prop];
@@ -609,7 +609,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
         });
         return newObj;
       })
-      .map(function(claim) {
+      .map(function (claim) {
         let newObj = {};
 
         for (const prop in claim) {
@@ -640,9 +640,9 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
     console.log("-----------------------hiut 2---------------");
     // sheet with intimated - EndOS movement
     let intimatedEndOsMovement = intimatedEndOsIncomplete
-      .map(function(claim) {
+      .map(function (claim) {
         let newObj = {};
-        intimatedEndOsMovementDuplicates.map(function(combineClaim) {
+        intimatedEndOsMovementDuplicates.map(function (combineClaim) {
           if (combineClaim.claimNo === claim.claimNo) {
             for (const prop in combineClaim) {
               newObj[prop] = combineClaim[prop];
@@ -709,6 +709,8 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       "claimNo"
     );
 
+    console.log(...paidNotInIntimatedBeginingOsRevived)
+
     let revivedClaims = _.concat(
       EndOSNotInBeginIntimatedRevived,
       paidNotInIntimatedBeginingOsRevived
@@ -729,10 +731,10 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
     ).map(claim => claim.claimNo);
 
     let totalMovement = totalMovementUniqueClaimNo
-      .map(function(claimNo) {
+      .map(function (claimNo) {
         let totaldifference = 0;
         let newObj = {};
-        totalMovementWithDuplicates.map(function(dupClaim) {
+        totalMovementWithDuplicates.map(function (dupClaim) {
           for (const prop in dupClaim) {
             if (claimNo === dupClaim.claimNo) {
               if (prop === "difference") {
@@ -762,10 +764,10 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       "claimNo"
     ).map(claim => claim.claimNo);
 
-    let combinedAll = combinedAllClaimUniqueClaimNo.map(function(claimNo) {
+    let combinedAll = combinedAllClaimUniqueClaimNo.map(function (claimNo) {
       let newObj = {};
 
-      combinedAllDuplicate.map(function(dupClaim) {
+      combinedAllDuplicate.map(function (dupClaim) {
         for (const prop in dupClaim) {
           if (claimNo === dupClaim.claimNo) {
             newObj[prop] = dupClaim[prop];
@@ -780,7 +782,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
 
 
     let paidSettled = combinedAll
-      .map(function(claim) {
+      .map(function (claim) {
         let newObj = {};
 
         for (const prop in claim) {
@@ -800,7 +802,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       })
       .filter(claim => claim.settled === "YES");
 
-    let combinedAllwithLabels = combinedAll.map(function(claim) {
+    let combinedAllwithLabels = combinedAll.map(function (claim) {
       let newObj = {};
 
       // movement flag
@@ -808,7 +810,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       if (totalMovement.some(e => e.claimNo === claim.claimNo)) {
         newObj.movement = "YES";
 
-        newObj.difference = _.find(totalMovement, function(o) {
+        newObj.difference = _.find(totalMovement, function (o) {
           return o.claimNo === claim.claimNo;
         }).difference;
       } else {
@@ -863,17 +865,17 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       "osBeginEstimate"
     );
 
-    let paidNotInIntimatedBeginingOsRevivedSummary = getSummary(
-      paidNotInIntimatedBeginingOsRevived,
-      "paidAmount"
-    );
+    let revivedClaimsWithRevivedAmount = combinedAllwithLabels.filter(claim => claim.revived === "YES").map(claim => {
+      let paidAmount = claim.paidAmount || 0;
+      let osEndMonthEstimate = claim.osEndMonthEstimate || 0;
 
-    console.log("-----------------------hiut 6 ---------------");
+      claim.revivedAmount = paidAmount + osEndMonthEstimate;
 
-    let EndOSNotInBeginIntimatedRevivedSummary = getSummary(
-      EndOSNotInBeginIntimatedRevived,
-      "osEndMonthEstimate"
-    );
+      return claim;
+    })
+
+    let totalRevivedSummary = getSummary(revivedClaimsWithRevivedAmount, "revivedAmount");
+
 
     let totalClosedAsNoClaimSummary = intimatedClosedAsNoClaimSummary.map(
       intClosedClaim => {
@@ -882,7 +884,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
         let totalCount = intClosedClaim.COUNT;
         let total = toFloat(intClosedClaim.TOTAL);
 
-        beginingClosedAsNoClaimSummary.map(function(beginingClosedClaim) {
+        beginingClosedAsNoClaimSummary.map(function (beginingClosedClaim) {
           if (intClosedClaim.CLASS === beginingClosedClaim.CLASS) {
             totalCount = totalCount + beginingClosedClaim.COUNT;
 
@@ -900,30 +902,6 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
       }
     );
 
-    let totalRevivedSummary = paidNotInIntimatedBeginingOsRevivedSummary.map(
-      function(inPaidClaim) {
-        let newObj = {};
-
-        let totalCount = inPaidClaim.COUNT;
-        let total = toFloat(inPaidClaim.TOTAL);
-
-        EndOSNotInBeginIntimatedRevivedSummary.map(function(endOsClaim) {
-          if (inPaidClaim.CLASS === endOsClaim.CLASS) {
-            totalCount = totalCount + endOsClaim.COUNT;
-
-            total = total + toFloat(endOsClaim.TOTAL);
-
-            newObj = {
-              CLASS: endOsClaim.CLASS,
-              COUNT: totalCount,
-              TOTAL: total.toFixed(2)
-            };
-          }
-        });
-
-        return newObj;
-      }
-    );
 
     let paidSettledSummary = getSummary(paidSettled, "paidAmount");
 
@@ -1051,7 +1029,7 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
 
     // formating of column widths
 
-    wsheets.map(function(sheet, index) {
+    wsheets.map(function (sheet, index) {
       if (index < 7) {
         sheet["!cols"] = [
           {
@@ -1155,10 +1133,10 @@ function runCalculationsFromIndex(sourcefile, reportDestination) {
     XLSX.writeFile(wb, "./app/tmp/unstyledReport.xlsx");
 
     XlsxPopulate.fromFileAsync("./app/tmp/unstyledReport.xlsx")
-      .then(function(otherWorkBook) {
+      .then(function (otherWorkBook) {
         const sheets = otherWorkBook.sheets();
 
-        sheets.map(function(sheet) {
+        sheets.map(function (sheet) {
           sheet.row(1).style({
             bold: true,
             fill: "ffff00",
